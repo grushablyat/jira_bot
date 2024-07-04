@@ -41,10 +41,10 @@ def text_handler(message):
     try:
         match result.state:
             case UserState.MENU:
-                if message.text == 'Просмотреть список задач':
+                if message.text == Button.LIST:
                     next_state = UserState.LIST
                     menu_list(BOT, chat.id)
-                elif message.text == 'Создать задачу':
+                elif message.text == Button.NEW_ISSUE_PROJECT:
                     next_state = UserState.NEW_ISSUE_PROJECT
                     menu_new_issue_project(BOT, chat.id)
                 else:
@@ -52,7 +52,7 @@ def text_handler(message):
                     menu_existing(BOT, chat.id)
 
             case UserState.LIST:
-                if message.text == 'Назад':
+                if message.text == Button.BACK:
                     next_state = UserState.MENU
                     menu_menu(BOT, chat.id)
                 else:
@@ -69,10 +69,10 @@ def text_handler(message):
                         menu_existing(BOT, chat.id)
 
             case UserState.ISSUE:
-                if message.text == 'Изменить статус задачи':
+                if message.text == Button.STATUS:
                     next_state = UserState.STATUS
                     menu_status(BOT, chat.id)
-                elif message.text == 'Назад':
+                elif message.text == Button.BACK:
                     next_state = UserState.LIST
                     current_issue_repo.delete(user.id)
                     menu_list(BOT, chat.id)
@@ -80,11 +80,11 @@ def text_handler(message):
                     next_state = UserState.ISSUE
                     menu_existing(BOT, chat.id)
             case UserState.STATUS:
-                if ['To do', 'In progress', 'Done', 'Отмена'].__contains__(message.text):
+                if [Button.TODO, Button.IN_PROGRESS, Button.DONE, Button.CANCEL].__contains__(message.text):
                     next_state = UserState.ISSUE
                     issue_id = current_issue_repo.get_by_user_id(user.id)
 
-                    if message.text == 'Отмена':
+                    if message.text == Button.CANCEL:
                         issue = jira_imitation.get_issue_by_id(issue_id)
                     else:
                         issue = jira_imitation.update_issue_status(issue_id, message.text)
