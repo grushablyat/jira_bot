@@ -16,9 +16,9 @@ CREATE TABLE current_issue (
 
 CREATE TABLE new_issue (
     user_id DECIMAL PRIMARY KEY,
-    project INT,
-    name VARCHAR(255),
-    assignee INT,
+    project VARCHAR(255),
+    title VARCHAR(255),
+    assignee VARCHAR(255),
     description TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );

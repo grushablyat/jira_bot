@@ -1,3 +1,6 @@
+next_id = 0
+
+
 class Issue:
     def __init__(self, id, project, title, assignee, description, status):
         self.id = id
@@ -6,13 +9,15 @@ class Issue:
         self.assignee = assignee
         self.description = description
         self.status = status
+        global next_id
+        next_id += 1
 
 
 issues = [
     Issue(0, 'project0', 'issue1', 'tip2', 'description1', 'Done'),
     Issue(1, 'project1', 'issue2', 'tip2', 'description2', 'In progress'),
     Issue(2, 'project0', 'issue3', 'tip1', 'description3', 'In progress'),
-    Issue(3, 'project0', 'issue4', 'tip3', 'description4', 'To do'),
+    Issue(3, 'project0', 'issue4', 'tip0', 'description4', 'To do'),
     Issue(4, 'project1', 'issue5', 'tip1', 'description5', 'To do'),
 ]
 
@@ -38,10 +43,16 @@ def update_issue_status(id, status):
     return issues[id]
 
 
+def create_issue(issue):
+    issue = Issue(next_id, issue.project, issue.title, issue.assignee, issue.description, 'To do')
+    issues.append(issue)
+    return issue
+
+
 class Project:
-    def __init__(self, id, name):
+    def __init__(self, id, title):
         self.id = id
-        self.name = name
+        self.title = title
 
 
 projects = [
@@ -59,6 +70,31 @@ def get_projects():
 def get_projects_titles():
     titles = []
     for project in projects:
-        titles.append(project.name)
+        titles.append(project.title)
 
     return titles
+
+
+class Assignee:
+    def __init__(self, id, name):
+        self.id = id
+        self.name = name
+
+
+assignees = [
+    Assignee(0, 'tip0'),
+    Assignee(1, 'tip1'),
+    Assignee(2, 'tip2'),
+]
+
+
+def get_assignees_names():
+    names = []
+    for assignee in assignees:
+        names.append(assignee.name)
+
+    return names
+
+
+def get_assignees():
+    return assignees

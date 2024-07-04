@@ -2,7 +2,7 @@ import telebot
 
 from config import TG_TOKEN
 from project.funcs import *
-from service import user_repo, current_issue_repo
+from service import user_repo, current_issue_repo, new_issue_repo
 from states import UserState
 from model.user import User
 
@@ -57,6 +57,7 @@ def text_handler(message):
                     menu_menu(BOT, chat.id)
                 else:
                     response_is_valid = False
+                    # is request to jira appropriate here?
                     for issue in jira_imitation.get_issues():
                         if message.text == issue.title:
                             next_state = UserState.ISSUE
@@ -79,6 +80,7 @@ def text_handler(message):
                 else:
                     next_state = UserState.ISSUE
                     menu_existing(BOT, chat.id)
+
             case UserState.STATUS:
                 if [Button.TODO, Button.IN_PROGRESS, Button.DONE, Button.CANCEL].__contains__(message.text):
                     next_state = UserState.ISSUE
@@ -93,6 +95,82 @@ def text_handler(message):
                 else:
                     next_state = UserState.STATUS
                     menu_existing(BOT, chat.id)
+
+            case UserState.NEW_ISSUE_PROJECT:
+                if message.text == Button.CANCEL:
+                    next_state = UserState.MENU
+                    menu_menu(BOT, chat.id)
+                    new_issue_repo.delete(user.id)
+                else:
+                    response_is_valid = False
+                    # is request to jira appropriate here?
+                    for project in jira_imitation.get_projects():
+                        if message.text == project.title:
+                            next_state = UserState.NEW_ISSUE_TITLE
+                            new_issue_repo.create(user.id)
+                            new_issue_repo.update_project(user.id, project.title)
+                            menu_new_issue_title(BOT, chat.id)
+                            response_is_valid = True
+                            break
+                    if not response_is_valid:
+                        next_state = UserState.NEW_ISSUE_PROJECT
+                        menu_existing(BOT, chat.id)
+
+            case UserState.NEW_ISSUE_TITLE:
+                if message.text == Button.CANCEL:
+                    next_state = UserState.MENU
+                    menu_menu(BOT, chat.id)
+                    new_issue_repo.delete(user.id)
+                else:
+                    next_state = UserState.NEW_ISSUE_ASSIGNEE
+                    new_issue_repo.update_title(user.id, message.text)
+                    menu_new_issue_assignee(BOT, chat.id)
+
+            case UserState.NEW_ISSUE_ASSIGNEE:
+                if message.text == Button.CANCEL:
+                    next_state = UserState.MENU
+                    menu_menu(BOT, chat.id)
+                    new_issue_repo.delete(user.id)
+                else:
+                    response_is_valid = False
+                    # is request to jira appropriate here?
+                    for assignee in jira_imitation.get_assignees():
+                        if message.text == assignee.name:
+                            next_state = UserState.NEW_ISSUE_DESCRIPTION
+                            new_issue_repo.update_assignee(user.id, assignee.name)
+                            menu_new_issue_description(BOT, chat.id)
+                            response_is_valid = True
+                            break
+                    if not response_is_valid:
+                        next_state = UserState.NEW_ISSUE_ASSIGNEE
+                        menu_existing(BOT, chat.id)
+
+            case UserState.NEW_ISSUE_DESCRIPTION:
+                if message.text == Button.CANCEL:
+                    next_state = UserState.MENU
+                    menu_menu(BOT, chat.id)
+                    new_issue_repo.delete(user.id)
+                else:
+                    next_state = UserState.NEW_ISSUE_PREVIEW
+                    new_issue_repo.update_description(user.id, message.text)
+                    issue = new_issue_repo.get_by_user_id(user.id)
+                    issue.status = Button.TODO
+                    menu_new_issue_preview(BOT, chat.id, issue)
+
+            case UserState.NEW_ISSUE_PREVIEW:
+                if message.text == Button.CANCEL:
+                    next_state = UserState.MENU
+                    menu_menu(BOT, chat.id)
+                    new_issue_repo.delete(user.id)
+                elif message.text == Button.CREATE:
+                    next_state = UserState.ISSUE
+                    issue = new_issue_repo.get_by_user_id(user.id)
+                    new_issue_repo.delete(user.id)
+                    issue = jira_imitation.create_issue(issue)
+
+                    current_issue_repo.create(user.id, issue.id)
+
+                    menu_issue(BOT, chat.id, issue)
 
     except ValueError:
         BOT.send_message(chat.id, "WRONG STATE")
