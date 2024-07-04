@@ -1,5 +1,7 @@
 from psycopg2 import connect, OperationalError
 
+from project.config import DBC
+
 
 def create_connection(db_name, db_user, db_password, db_host, db_port):
     connection = None
@@ -11,14 +13,16 @@ def create_connection(db_name, db_user, db_password, db_host, db_port):
             host=db_host,
             port=db_port,
         )
-        print("Connection to PostgreSQL DB successful")
+        # print("Connection to PostgreSQL DB successful")
     except OperationalError as e:
-        print(f"The error '{e}' occurred")
+        pass
+        # print(f"The error '{e}' occurred")
 
     return connection
 
 
-def select(connection, query):
+def select(query):
+    connection = create_connection(DBC['database'], DBC['username'], DBC['password'], DBC['host'], DBC['port'])
     cursor = connection.cursor()
     result = None
     try:
@@ -28,10 +32,12 @@ def select(connection, query):
         pass
         # print(f"The error '{e}' occurred")
 
+    connection.close()
     return result
 
 
-def execute_query(connection, query):
+def execute_query(query):
+    connection = create_connection(DBC['database'], DBC['username'], DBC['password'], DBC['host'], DBC['port'])
     connection.autocommit = True
     cursor = connection.cursor()
     try:
@@ -41,3 +47,5 @@ def execute_query(connection, query):
     except OperationalError as e:
         # print(f"The error '{e}' occurred")
         return False
+    finally:
+        connection.close()
