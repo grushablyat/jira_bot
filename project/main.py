@@ -56,18 +56,20 @@ def text_handler(message):
                     next_state = UserState.MENU
                     menu_menu(BOT, chat.id)
                 else:
-                    response_is_valid = False
-                    # is request to jira appropriate here?
-                    for issue in jira_imitation.get_issues():
-                        if message.text == issue.title:
-                            next_state = UserState.ISSUE
-                            current_issue_repo.create(user.id, issue.id)
-                            menu_issue(BOT, chat.id, issue)
-                            response_is_valid = True
-                            break
-                    if not response_is_valid:
-                        next_state = UserState.LIST
-                        menu_existing(BOT, chat.id)
+                    next_state = UserState.LIST
+                    menu_existing(BOT, chat.id)
+                    # response_is_valid = False
+                    # # is request to jira appropriate here?
+                    # for issue in jira_imitation.get_issues():
+                    #     if message.text == issue.title:
+                    #         next_state = UserState.ISSUE
+                    #         current_issue_repo.create(user.id, issue.id)
+                    #         menu_issue(BOT, chat.id, issue)
+                    #         response_is_valid = True
+                    #         break
+                    # if not response_is_valid:
+                    #     next_state = UserState.LIST
+                    #     menu_existing(BOT, chat.id)
 
             case UserState.ISSUE:
                 if message.text == Button.STATUS:
@@ -197,6 +199,9 @@ def callback_inline(call):
     try:
         match result.state:
             case UserState.LIST:
+                # BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
+                #                       text='Список задач', reply_markup=None)
+                BOT.delete_message(chat.id, call.message.message_id)
                 response_is_valid = False
                 # is request to jira appropriate here?
                 for issue in jira_imitation.get_issues():
