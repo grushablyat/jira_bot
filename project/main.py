@@ -103,17 +103,8 @@ def text_handler(message):
                     menu_menu(BOT, chat.id)
                     new_issue_repo.delete(user.id)
                 else:
-                    # is request to jira appropriate here?
-                    for project in jira_imitation.get_projects():
-                        if message.text == project.title:
-                            next_state = UserState.NEW_ISSUE_TITLE
-                            new_issue_repo.create(user.id)
-                            new_issue_repo.update_project(user.id, project.title)
-                            menu_new_issue_title(BOT, chat.id)
-                            break
-                    else:
-                        next_state = UserState.NEW_ISSUE_PROJECT
-                        menu_existing(BOT, chat.id)
+                    next_state = UserState.NEW_ISSUE_PROJECT
+                    menu_existing(BOT, chat.id)
 
             case UserState.NEW_ISSUE_TITLE:
                 if message.text == Button.CANCEL:
@@ -134,16 +125,8 @@ def text_handler(message):
                     next_state = UserState.NEW_ISSUE_DESCRIPTION
                     menu_new_issue_description(BOT, chat.id)
                 else:
-                    # is request to jira appropriate here?
-                    for assignee in jira_imitation.get_assignees():
-                        if message.text == assignee.name:
-                            next_state = UserState.NEW_ISSUE_DESCRIPTION
-                            new_issue_repo.update_assignee(user.id, assignee.name)
-                            menu_new_issue_description(BOT, chat.id)
-                            break
-                    else:
-                        next_state = UserState.NEW_ISSUE_ASSIGNEE
-                        menu_existing(BOT, chat.id)
+                    next_state = UserState.NEW_ISSUE_ASSIGNEE
+                    menu_existing(BOT, chat.id)
 
             case UserState.NEW_ISSUE_DESCRIPTION:
                 if message.text == Button.CANCEL:
@@ -210,6 +193,35 @@ def callback_inline(call):
                         break
                 else:
                     next_state = UserState.LIST
+                    menu_existing(BOT, chat.id)
+
+            case UserState.NEW_ISSUE_PROJECT:
+                BOT.delete_message(chat.id, call.message.message_id)
+
+                # is request to jira appropriate here?
+                for project in jira_imitation.get_projects():
+                    if call.data == project.title:
+                        next_state = UserState.NEW_ISSUE_TITLE
+                        new_issue_repo.create(user.id)
+                        new_issue_repo.update_project(user.id, project.title)
+                        menu_new_issue_title(BOT, chat.id)
+                        break
+                else:
+                    next_state = UserState.NEW_ISSUE_PROJECT
+                    menu_existing(BOT, chat.id)
+
+            case UserState.NEW_ISSUE_ASSIGNEE:
+                BOT.delete_message(chat.id, call.message.message_id)
+
+                # is request to jira appropriate here?
+                for assignee in jira_imitation.get_assignees():
+                    if call.data == assignee.name:
+                        next_state = UserState.NEW_ISSUE_DESCRIPTION
+                        new_issue_repo.update_assignee(user.id, assignee.name)
+                        menu_new_issue_description(BOT, chat.id)
+                        break
+                else:
+                    next_state = UserState.NEW_ISSUE_ASSIGNEE
                     menu_existing(BOT, chat.id)
 
     except ValueError:
