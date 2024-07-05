@@ -29,8 +29,6 @@ class Button(enum.StrEnum):
     LIST = 'Просмотреть список задач'
     NEW_ISSUE_PROJECT = 'Создать задачу'
 
-    # LIST
-
     # ISSUE
     STATUS = 'Изменить статус задачи'
 
@@ -38,6 +36,9 @@ class Button(enum.StrEnum):
     TODO = 'To do'
     IN_PROGRESS = 'In progress'
     DONE = 'Done'
+
+    # NEW_ISSUE_ASSIGNEE
+    NO_ONE = 'Без исполнителя'
 
     # NEW_ISSUE_PREVIEW
     CREATE = 'Создать'
@@ -79,7 +80,7 @@ def menu_new_issue_title(bot, chat_id):
 
 def menu_new_issue_assignee(bot, chat_id):
     bot.send_message(chat_id, 'Выберите исполнителя',
-                     reply_markup=create_markup(*jira_imitation.get_assignees_names(), Button.CANCEL))
+                     reply_markup=create_markup(*jira_imitation.get_assignees_names(), Button.NO_ONE, Button.CANCEL))
 
 
 def menu_new_issue_description(bot, chat_id):

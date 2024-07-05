@@ -127,6 +127,9 @@ def text_handler(message):
                     next_state = UserState.MENU
                     menu_menu(BOT, chat.id)
                     new_issue_repo.delete(user.id)
+                elif message.text == Button.NO_ONE:
+                    next_state = UserState.NEW_ISSUE_DESCRIPTION
+                    menu_new_issue_description(BOT, chat.id)
                 else:
                     # is request to jira appropriate here?
                     for assignee in jira_imitation.get_assignees():
