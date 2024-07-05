@@ -16,6 +16,17 @@ def create_markup(*args):
     return markup
 
 
+def create_inline_markup(*args):
+    actions = []
+    for arg in args:
+        actions.append(types.InlineKeyboardButton(arg, callback_data=arg))
+
+    markup = types.InlineKeyboardMarkup()
+    markup.add(*actions)
+
+    return markup
+
+
 def format_issue(issue):
     return f'<b>{issue.title}</b> ({issue.status})\n{issue.assignee}\n\n{issue.description}'
 
@@ -53,8 +64,16 @@ def menu_menu(bot, chat_id):
 
 
 def menu_list(bot, chat_id):
-    bot.send_message(chat_id, 'Выберите задачу',
-                     reply_markup=create_markup(*jira_imitation.get_issues_titles(), Button.BACK))
+    # bot.send_message(chat_id, 'Выберите задачу',
+    #                  reply_markup=create_markup(*jira_imitation.get_issues_titles(), Button.BACK))
+
+    # message = bot.send_message(chat_id, 'Выберите задачу', reply_markup=create_markup(Button.BACK))
+    # bot.edit_message_text(chat_id=chat_id, message_id=message.message_id, text='Выберите задачу',
+    #                       reply_markup=create_inline_markup(*jira_imitation.get_issues_titles()))
+
+    bot.send_message(chat_id, 'Выберите задачу', reply_markup=create_markup(Button.BACK))
+    bot.send_message(chat_id, 'Список задач', reply_markup=create_inline_markup(*jira_imitation.get_issues_titles()))
+
 
 
 def menu_issue(bot, chat_id, issue):

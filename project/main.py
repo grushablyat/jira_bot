@@ -179,5 +179,43 @@ def text_handler(message):
     user_repo.update(user.id, next_state)
 
 
+@BOT.callback_query_handler(func=lambda call: True)
+def callback_inline(call):
+    chat = call.message.chat
+    user = call.from_user
+
+    # Getting user's state
+    result = user_repo.get_by_id(user.id)
+
+    if result is None:
+        print("NO SUCH USER")
+        BOT.send_message(chat.id, "NO SUCH USER")
+        return
+
+    next_state = UserState.MENU
+
+    try:
+        match result.state:
+            case UserState.LIST:
+                response_is_valid = False
+                # is request to jira appropriate here?
+                for issue in jira_imitation.get_issues():
+                    if call.data == issue.title:
+                        next_state = UserState.ISSUE
+                        current_issue_repo.create(user.id, issue.id)
+                        menu_issue(BOT, chat.id, issue)
+                        response_is_valid = True
+                        break
+                if not response_is_valid:
+                    next_state = UserState.LIST
+                    menu_existing(BOT, chat.id)
+
+    except ValueError:
+        BOT.send_message(chat.id, "WRONG STATE")
+        print("WRONG STATE")
+
+    user_repo.update(user.id, next_state)
+
+
 if __name__ == '__main__':
     BOT.polling(non_stop=True)
