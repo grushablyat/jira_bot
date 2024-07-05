@@ -6,9 +6,12 @@ import jira_imitation
 
 
 def create_markup(*args):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    actions = []
     for arg in args:
-        markup.add(types.KeyboardButton(arg))
+        actions.append(types.KeyboardButton(arg))
+
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(*actions)
 
     return markup
 
