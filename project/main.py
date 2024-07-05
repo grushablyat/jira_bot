@@ -56,16 +56,14 @@ def text_handler(message):
                     next_state = UserState.MENU
                     menu_menu(BOT, chat.id)
                 else:
-                    response_is_valid = False
                     # is request to jira appropriate here?
                     for issue in jira_imitation.get_issues():
                         if message.text == issue.title:
                             next_state = UserState.ISSUE
                             current_issue_repo.create(user.id, issue.id)
                             menu_issue(BOT, chat.id, issue)
-                            response_is_valid = True
                             break
-                    if not response_is_valid:
+                    else:
                         next_state = UserState.LIST
                         menu_existing(BOT, chat.id)
 
@@ -102,7 +100,6 @@ def text_handler(message):
                     menu_menu(BOT, chat.id)
                     new_issue_repo.delete(user.id)
                 else:
-                    response_is_valid = False
                     # is request to jira appropriate here?
                     for project in jira_imitation.get_projects():
                         if message.text == project.title:
@@ -110,9 +107,8 @@ def text_handler(message):
                             new_issue_repo.create(user.id)
                             new_issue_repo.update_project(user.id, project.title)
                             menu_new_issue_title(BOT, chat.id)
-                            response_is_valid = True
                             break
-                    if not response_is_valid:
+                    else:
                         next_state = UserState.NEW_ISSUE_PROJECT
                         menu_existing(BOT, chat.id)
 
@@ -132,16 +128,14 @@ def text_handler(message):
                     menu_menu(BOT, chat.id)
                     new_issue_repo.delete(user.id)
                 else:
-                    response_is_valid = False
                     # is request to jira appropriate here?
                     for assignee in jira_imitation.get_assignees():
                         if message.text == assignee.name:
                             next_state = UserState.NEW_ISSUE_DESCRIPTION
                             new_issue_repo.update_assignee(user.id, assignee.name)
                             menu_new_issue_description(BOT, chat.id)
-                            response_is_valid = True
                             break
-                    if not response_is_valid:
+                    else:
                         next_state = UserState.NEW_ISSUE_ASSIGNEE
                         menu_existing(BOT, chat.id)
 
