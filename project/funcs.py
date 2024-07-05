@@ -92,7 +92,7 @@ def menu_new_issue_title(bot, chat_id):
 
 def menu_new_issue_assignee(bot, chat_id):
     bot.send_message(chat_id, 'Выберите исполнителя', reply_markup=create_markup(Button.NO_ONE, Button.CANCEL))
-    bot.send_message(chat_id, 'Список проектов',
+    bot.send_message(chat_id, 'Список исполнителей',
                      reply_markup=create_inline_markup(*jira_imitation.get_assignees_names()))
 
 
