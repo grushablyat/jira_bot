@@ -32,8 +32,7 @@ def text_handler(message):
     result = user_repo.get_by_id(user.id)
 
     if result is None:
-        print("NO SUCH USER")
-        BOT.send_message(chat.id, "NO SUCH USER")
+        BOT.send_message(chat.id, "Пользователь не зарегистрирован, нажмите /start")
         return
 
     next_state = UserState.MENU
@@ -152,9 +151,11 @@ def text_handler(message):
 
                     menu_issue(BOT, chat.id, issue)
 
+            case _:
+                BOT.send_message(chat.id, "Неизвестное состояние, нажмите /start")
+
     except ValueError:
-        BOT.send_message(chat.id, "WRONG STATE")
-        print("WRONG STATE")
+        BOT.send_message(chat.id, "Неизвестное состояние, нажмите /start")
 
     user_repo.update(user.id, next_state)
 
@@ -168,8 +169,7 @@ def callback_inline(call):
     result = user_repo.get_by_id(user.id)
 
     if result is None:
-        print("NO SUCH USER")
-        BOT.send_message(chat.id, "NO SUCH USER")
+        BOT.send_message(chat.id, "Пользователь не зарегистрирован, нажмите /start")
         return
 
     next_state = UserState.MENU
@@ -228,9 +228,11 @@ def callback_inline(call):
                                           text=f'Нет такого исполнителя', reply_markup=None)
                     menu_existing(BOT, chat.id)
 
+            case _:
+                BOT.send_message(chat.id, "Неизвестное состояни, нажмите /start")
+
     except ValueError:
-        BOT.send_message(chat.id, "WRONG STATE")
-        print("WRONG STATE")
+        BOT.send_message(chat.id, "Неизвестное состояние, нажмите /start")
 
     user_repo.update(user.id, next_state)
 

@@ -14,11 +14,11 @@ class Issue:
 
 
 issues = [
-    Issue(0, 'project0', 'issue1', 'tip2', 'description1', 'Done'),
-    Issue(1, 'project1', 'issue2', 'tip2', 'description2', 'In progress'),
-    Issue(2, 'project0', 'issue3', 'tip1', 'description3', 'In progress'),
-    Issue(3, 'project0', 'issue4', 'tip0', 'description4', 'To do'),
-    Issue(4, 'project1', 'issue5', 'tip1', 'description5', 'To do'),
+    Issue(0, 'Проект 0', 'Задача 1', 'Исполнитель 2', 'Описание 1', 'Done'),
+    Issue(1, 'Проект 1', 'Задача 2', 'Исполнитель 2', 'Описание 2', 'In progress'),
+    Issue(2, 'Проект 0', 'Задача 3', 'Исполнитель 1', 'Описание 3', 'In progress'),
+    Issue(3, 'Проект 0', 'Задача 4', 'Исполнитель 0', 'Описание 4', 'To do'),
+    Issue(4, 'Проект 1', 'Задача 5', 'Исполнитель 1', 'Описание 5', 'To do'),
 ]
 
 
@@ -56,8 +56,8 @@ class Project:
 
 
 projects = [
-    Project(0, 'project0'),
-    Project(1, 'project1'),
+    Project(0, 'Проект 0'),
+    Project(1, 'Проект 1'),
     # Project(2, 'project2'),
     # Project(3, 'project3'),
 ]
@@ -82,9 +82,9 @@ class Assignee:
 
 
 assignees = [
-    Assignee(0, 'tip0'),
-    Assignee(1, 'tip1'),
-    Assignee(2, 'tip2'),
+    Assignee(0, 'Исполнитель 0'),
+    Assignee(1, 'Исполнитель 1'),
+    Assignee(2, 'Исполнитель 2'),
 ]
 
 
