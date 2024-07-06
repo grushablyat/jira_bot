@@ -229,7 +229,7 @@ def callback_inline(call):
                     menu_existing(BOT, chat.id)
 
             case _:
-                BOT.send_message(chat.id, "Неизвестное состояни, нажмите /start")
+                BOT.send_message(chat.id, "Неизвестное состояние, нажмите /start")
 
     except ValueError:
         BOT.send_message(chat.id, "Неизвестное состояние, нажмите /start")
