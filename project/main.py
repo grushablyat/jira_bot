@@ -59,17 +59,6 @@ def text_handler(message):
                     next_state = UserState.LIST
                     menu_existing(BOT, chat.id)
 
-                    # # is request to jira appropriate here?
-                    # for issue in jira_imitation.get_issues():
-                    #     if message.text == issue.title:
-                    #         next_state = UserState.ISSUE
-                    #         current_issue_repo.create(user.id, issue.id)
-                    #         menu_issue(BOT, chat.id, issue)
-                    #         break
-                    # else:
-                    #     next_state = UserState.LIST
-                    #     menu_existing(BOT, chat.id)
-
             case UserState.ISSUE:
                 if message.text == Button.STATUS:
                     next_state = UserState.STATUS
@@ -123,6 +112,8 @@ def text_handler(message):
                     new_issue_repo.delete(user.id)
                 elif message.text == Button.NO_ONE:
                     next_state = UserState.NEW_ISSUE_DESCRIPTION
+                    BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id-1,
+                                          text=f'Без исполнителя', reply_markup=None)
                     menu_new_issue_description(BOT, chat.id)
                 else:
                     next_state = UserState.NEW_ISSUE_ASSIGNEE
@@ -180,48 +171,55 @@ def callback_inline(call):
     try:
         match result.state:
             case UserState.LIST:
-                # BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
-                #                       text='Список задач', reply_markup=None)
-                BOT.delete_message(chat.id, call.message.message_id)
-
                 # is request to jira appropriate here?
                 for issue in jira_imitation.get_issues():
                     if call.data == issue.title:
                         next_state = UserState.ISSUE
                         current_issue_repo.create(user.id, issue.id)
+                        BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
+                                              text=f'Задача: <b>{issue.title}</b>', reply_markup=None,
+                                              parse_mode='HTML')
                         menu_issue(BOT, chat.id, issue)
                         break
                 else:
                     next_state = UserState.LIST
+                    BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
+                                          text=f'Нет такой задачи', reply_markup=None)
                     menu_existing(BOT, chat.id)
 
             case UserState.NEW_ISSUE_PROJECT:
-                BOT.delete_message(chat.id, call.message.message_id)
-
                 # is request to jira appropriate here?
                 for project in jira_imitation.get_projects():
                     if call.data == project.title:
                         next_state = UserState.NEW_ISSUE_TITLE
                         new_issue_repo.create(user.id)
                         new_issue_repo.update_project(user.id, project.title)
+                        BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
+                                              text=f'Проект: <b>{project.title}</b>', reply_markup=None,
+                                              parse_mode='HTML')
                         menu_new_issue_title(BOT, chat.id)
                         break
                 else:
                     next_state = UserState.NEW_ISSUE_PROJECT
+                    BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
+                                          text=f'Нет такого проекта', reply_markup=None)
                     menu_existing(BOT, chat.id)
 
             case UserState.NEW_ISSUE_ASSIGNEE:
-                BOT.delete_message(chat.id, call.message.message_id)
-
                 # is request to jira appropriate here?
                 for assignee in jira_imitation.get_assignees():
                     if call.data == assignee.name:
                         next_state = UserState.NEW_ISSUE_DESCRIPTION
                         new_issue_repo.update_assignee(user.id, assignee.name)
+                        BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
+                                              text=f'Исполнитель: <b>{assignee.name}</b>', reply_markup=None,
+                                              parse_mode='HTML')
                         menu_new_issue_description(BOT, chat.id)
                         break
                 else:
                     next_state = UserState.NEW_ISSUE_ASSIGNEE
+                    BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
+                                          text=f'Нет такого исполнителя', reply_markup=None)
                     menu_existing(BOT, chat.id)
 
     except ValueError:
