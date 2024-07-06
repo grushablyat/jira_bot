@@ -16,6 +16,17 @@ def create_markup(*args):
     return markup
 
 
+def create_inline_markup(*args):
+    actions = []
+    for arg in args:
+        actions.append(types.InlineKeyboardButton(arg, callback_data=arg))
+
+    markup = types.InlineKeyboardMarkup()
+    markup.add(*actions)
+
+    return markup
+
+
 def format_issue(issue):
     return f'<b>{issue.title}</b> ({issue.status})\n{issue.assignee}\n\n{issue.description}'
 
@@ -54,8 +65,8 @@ def menu_menu(bot, chat_id):
 
 
 def menu_list(bot, chat_id):
-    bot.send_message(chat_id, 'Выберите задачу',
-                     reply_markup=create_markup(*jira_imitation.get_issues_titles(), Button.BACK))
+    bot.send_message(chat_id, 'Выберите задачу', reply_markup=create_markup(Button.BACK))
+    bot.send_message(chat_id, 'Список задач', reply_markup=create_inline_markup(*jira_imitation.get_issues_titles()))
 
 
 def menu_issue(bot, chat_id, issue):
@@ -69,8 +80,9 @@ def menu_status(bot, chat_id):
 
 
 def menu_new_issue_project(bot, chat_id):
-    bot.send_message(chat_id, 'Выберите проект:',
-                     reply_markup=create_markup(*jira_imitation.get_projects_titles(), Button.CANCEL))
+    bot.send_message(chat_id, 'Выберите проект', reply_markup=create_markup(Button.CANCEL))
+    bot.send_message(chat_id, 'Список проектов',
+                     reply_markup=create_inline_markup(*jira_imitation.get_projects_titles()))
 
 
 def menu_new_issue_title(bot, chat_id):
@@ -79,8 +91,9 @@ def menu_new_issue_title(bot, chat_id):
 
 
 def menu_new_issue_assignee(bot, chat_id):
-    bot.send_message(chat_id, 'Выберите исполнителя',
-                     reply_markup=create_markup(*jira_imitation.get_assignees_names(), Button.NO_ONE, Button.CANCEL))
+    bot.send_message(chat_id, 'Выберите исполнителя', reply_markup=create_markup(Button.NO_ONE, Button.CANCEL))
+    bot.send_message(chat_id, 'Список исполнителей',
+                     reply_markup=create_inline_markup(*jira_imitation.get_assignees_names()))
 
 
 def menu_new_issue_description(bot, chat_id):
