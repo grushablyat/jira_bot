@@ -54,6 +54,8 @@ def text_handler(message):
             case UserState.LIST:
                 if message.text == Button.BACK:
                     next_state = UserState.MENU
+                    BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id-1,
+                                          text=f'Список задач', reply_markup=None)
                     menu_menu(BOT, chat.id)
                 else:
                     next_state = UserState.LIST
@@ -89,6 +91,8 @@ def text_handler(message):
             case UserState.NEW_ISSUE_PROJECT:
                 if message.text == Button.CANCEL:
                     next_state = UserState.MENU
+                    BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id-1,
+                                          text=f'Список проектов', reply_markup=None)
                     menu_menu(BOT, chat.id)
                     new_issue_repo.delete(user.id)
                 else:
@@ -108,6 +112,8 @@ def text_handler(message):
             case UserState.NEW_ISSUE_ASSIGNEE:
                 if message.text == Button.CANCEL:
                     next_state = UserState.MENU
+                    BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id-1,
+                                          text=f'Список исполнителей', reply_markup=None)
                     menu_menu(BOT, chat.id)
                     new_issue_repo.delete(user.id)
                 elif message.text == Button.NO_ONE:
