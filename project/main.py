@@ -1,13 +1,60 @@
-import telebot
+from telebot import TeleBot
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
+import jira_imitation
 from config import TG_TOKEN
-from project.funcs import *
+from model.user import User
+from project.button import Button
 from service import user_repo, current_issue_repo, new_issue_repo
 from states import UserState
-from model.user import User
 
 
-BOT = telebot.TeleBot(token=TG_TOKEN)
+BOT = TeleBot(token=TG_TOKEN)
+
+
+def create_markup(*args):
+    actions = []
+    for arg in args:
+        actions.append(KeyboardButton(arg))
+
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(*actions)
+
+    return markup
+
+
+def create_inline_markup(*args):
+    actions = []
+    for arg in args:
+        actions.append(InlineKeyboardButton(arg, callback_data=arg))
+
+    markup = InlineKeyboardMarkup()
+    markup.add(*actions)
+
+    return markup
+
+
+def format_issue(issue):
+    return f'<b>{issue.title}</b> ({issue.status})\n{issue.assignee}\n\n{issue.description}'
+
+
+def menu_existing(bot, chat_id):
+    bot.send_message(chat_id, 'Выберите существующее действие')
+
+
+def menu_menu(bot, chat_id):
+    bot.send_message(chat_id, 'Выберите нужное действие',
+                     reply_markup=create_markup(Button.LIST, Button.NEW_ISSUE_PROJECT))
+
+
+def menu_list(bot, chat_id):
+    bot.send_message(chat_id, 'Выберите задачу', reply_markup=create_markup(Button.BACK))
+    bot.send_message(chat_id, 'Список задач', reply_markup=create_inline_markup(*jira_imitation.get_issues_titles()))
+
+
+def menu_issue(bot, chat_id, issue):
+    bot.send_message(chat_id, format_issue(issue), parse_mode='HTML',
+                     reply_markup=create_markup(Button.STATUS, Button.BACK))
 
 
 @BOT.message_handler(commands=['start'])
@@ -45,7 +92,9 @@ def text_handler(message):
                     menu_list(BOT, chat.id)
                 elif message.text == Button.NEW_ISSUE_PROJECT:
                     next_state = UserState.NEW_ISSUE_PROJECT
-                    menu_new_issue_project(BOT, chat.id)
+                    BOT.send_message(chat.id, 'Выберите проект', reply_markup=create_markup(Button.CANCEL))
+                    BOT.send_message(chat.id, 'Список проектов',
+                                     reply_markup=create_inline_markup(*jira_imitation.get_projects_titles()))
                 else:
                     next_state = UserState.MENU
                     menu_existing(BOT, chat.id)
@@ -63,7 +112,9 @@ def text_handler(message):
             case UserState.ISSUE:
                 if message.text == Button.STATUS:
                     next_state = UserState.STATUS
-                    menu_status(BOT, chat.id)
+                    BOT.send_message(chat.id, 'Выберите новый статус задачи',
+                                     reply_markup=create_markup(Button.TODO, Button.IN_PROGRESS,
+                                                                Button.DONE, Button.CANCEL))
                 elif message.text == Button.BACK:
                     next_state = UserState.LIST
                     current_issue_repo.delete(user.id)
@@ -106,7 +157,9 @@ def text_handler(message):
                 else:
                     next_state = UserState.NEW_ISSUE_ASSIGNEE
                     new_issue_repo.update_title(user.id, message.text)
-                    menu_new_issue_assignee(BOT, chat.id)
+                    BOT.send_message(chat.id, 'Выберите исполнителя', reply_markup=create_markup(Button.NO_ONE, Button.CANCEL))
+                    BOT.send_message(chat.id, 'Список исполнителей',
+                                     reply_markup=create_inline_markup(*jira_imitation.get_assignees_names()))
 
             case UserState.NEW_ISSUE_ASSIGNEE:
                 if message.text == Button.CANCEL:
@@ -119,7 +172,8 @@ def text_handler(message):
                     next_state = UserState.NEW_ISSUE_DESCRIPTION
                     BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id-1,
                                           text=f'Без исполнителя', reply_markup=None)
-                    menu_new_issue_description(BOT, chat.id)
+                    BOT.send_message(chat.id, 'Введите описание задачи',
+                                     reply_markup=create_markup(Button.CANCEL))
                 else:
                     next_state = UserState.NEW_ISSUE_ASSIGNEE
                     menu_existing(BOT, chat.id)
@@ -134,7 +188,9 @@ def text_handler(message):
                     new_issue_repo.update_description(user.id, message.text)
                     issue = new_issue_repo.get_by_user_id(user.id)
                     issue.status = Button.TODO
-                    menu_new_issue_preview(BOT, chat.id, issue)
+                    BOT.send_message(chat.id, format_issue(issue), parse_mode='HTML')
+                    BOT.send_message(chat.id, 'Подтвердите создание задачи',
+                                     reply_markup=create_markup(Button.CREATE, Button.CANCEL))
 
             case UserState.NEW_ISSUE_PREVIEW:
                 if message.text == Button.CANCEL:
@@ -203,7 +259,8 @@ def callback_inline(call):
                         BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
                                               text=f'Проект: <b>{project.title}</b>', reply_markup=None,
                                               parse_mode='HTML')
-                        menu_new_issue_title(BOT, chat.id)
+                        BOT.send_message(chat.id, 'Введите название задачи:',
+                                         reply_markup=create_markup(Button.CANCEL))
                         break
                 else:
                     next_state = UserState.NEW_ISSUE_PROJECT
@@ -220,7 +277,8 @@ def callback_inline(call):
                         BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
                                               text=f'Исполнитель: <b>{assignee.name}</b>', reply_markup=None,
                                               parse_mode='HTML')
-                        menu_new_issue_description(BOT, chat.id)
+                        BOT.send_message(chat.id, 'Введите описание задачи',
+                                         reply_markup=create_markup(Button.CANCEL))
                         break
                 else:
                     next_state = UserState.NEW_ISSUE_ASSIGNEE
