@@ -2,8 +2,8 @@ from telebot import TeleBot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 import jira_imitation
+from button import Button, STATUS_MENU
 from config import TG_TOKEN
-from project.button import Button, STATUS_MENU
 from service import user_repo, current_issue_repo, new_issue_repo
 from states import UserState
 
@@ -130,12 +130,18 @@ def text_handler(message):
                     next_state = UserState.ISSUE
                     issue_id = current_issue_repo.get_by_user_id(user.id)
 
-                    if message.text == Button.CANCEL:
-                        issue = jira_imitation.get_issue_by_id(issue_id)
-                    else:
-                        issue = jira_imitation.update_issue_status(issue_id, message.text)
+                    if issue_id is not None:
+                        if message.text == Button.CANCEL:
+                            issue = jira_imitation.get_issue_by_id(issue_id)
+                        else:
+                            issue = jira_imitation.update_issue_status(issue_id, message.text)
 
-                    menu_issue(BOT, chat.id, issue)
+                        menu_issue(BOT, chat.id, issue)
+                    else:
+                        next_state = UserState.LIST
+                        current_issue_repo.delete(user.id)
+                        menu_existing(BOT, chat.id, "Произошла ошибка, попробуйте снова")
+                        menu_list(BOT, chat.id)
                 else:
                     next_state = UserState.STATUS
                     menu_existing(BOT, chat.id)
@@ -196,10 +202,16 @@ def text_handler(message):
                     next_state = UserState.NEW_ISSUE_PREVIEW
                     new_issue_repo.update(user.id, 'description', message.text)
                     issue = new_issue_repo.get_by_user_id(user.id)
-                    issue.status = Button.TODO
-                    BOT.send_message(chat.id, format_issue(issue), parse_mode='HTML')
-                    BOT.send_message(chat.id, 'Подтвердите создание задачи',
-                                     reply_markup=create_markup(Button.CREATE, Button.CANCEL))
+                    if issue is not None:
+                        issue.status = Button.TODO
+                        BOT.send_message(chat.id, format_issue(issue), parse_mode='HTML')
+                        BOT.send_message(chat.id, 'Подтвердите создание задачи',
+                                         reply_markup=create_markup(Button.CREATE, Button.CANCEL))
+                    else:
+                        next_state = UserState.MENU
+                        new_issue_repo.delete(user.id)
+                        menu_existing(BOT, chat.id, 'Произошла ошибка, попробуйте снова')
+                        menu_menu(BOT, chat.id)
 
             case UserState.NEW_ISSUE_PREVIEW:
                 if message.text == Button.CANCEL:
@@ -210,7 +222,12 @@ def text_handler(message):
                     next_state = UserState.ISSUE
                     issue = new_issue_repo.get_by_user_id(user.id)
                     new_issue_repo.delete(user.id)
-                    issue = jira_imitation.create_issue(issue)
+                    if issue is not None:
+                        issue = jira_imitation.create_issue(issue)
+                    else:
+                        next_state = UserState.MENU
+                        menu_existing(BOT, chat.id, 'Произошла ошибка, попробуйте снова')
+                        menu_menu(BOT, chat.id)
 
                     current_issue_repo.create(user.id, issue.id)
 
