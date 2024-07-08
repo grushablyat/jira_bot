@@ -127,7 +127,7 @@ def text_handler(message):
                     menu_existing(BOT, chat.id)
 
             case UserState.STATUS:
-                if [Button.TODO, Button.IN_PROGRESS, Button.DONE, Button.CANCEL].__contains__(message.text):
+                if message.text in Button.STATUS_MENU:
                     next_state = UserState.ISSUE
                     issue_id = current_issue_repo.get_by_user_id(user.id)
 
