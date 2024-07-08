@@ -4,7 +4,7 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 import jira_imitation
 from config import TG_TOKEN
 from model.user import User
-from project.button import Button
+from project.button import Button, STATUS_MENU
 from service import user_repo, current_issue_repo, new_issue_repo
 from states import UserState
 
@@ -127,7 +127,7 @@ def text_handler(message):
                     menu_existing(BOT, chat.id)
 
             case UserState.STATUS:
-                if message.text in Button.STATUS_MENU:
+                if message.text in STATUS_MENU:
                     next_state = UserState.ISSUE
                     issue_id = current_issue_repo.get_by_user_id(user.id)
 
