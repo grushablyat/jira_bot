@@ -1,33 +1,9 @@
 from psycopg2 import OperationalError
 
-from project.model.user import User
 from project.service import repo, current_issue_repo, new_issue_repo
 
 
-def get_all():
-    connection = repo.create_connection()
-    cursor = connection.cursor()
-    result = None
-    try:
-        cursor.execute('''
-            SELECT * FROM users
-        ''')
-        result = cursor.fetchall()
-    except OperationalError:
-        pass
-    finally:
-        connection.close()
-
-    users = []
-
-    if result is not None:
-        for row in result:
-            users.append(User(row[0], row[1]))
-
-    return users
-
-
-def get_by_id(id):
+def get_state_by_id(id):
     connection = repo.create_connection()
     cursor = connection.cursor()
     result = None
@@ -43,15 +19,15 @@ def get_by_id(id):
     finally:
         connection.close()
 
-    user = None
+    state = None
     if result is not None:
         if len(result) == 1:
-            user = User(result[0][0], result[0][1])
+            state = result[0][1]
 
-    return user
+    return state
 
 
-def create(user):
+def create(id, state):
     connection = repo.create_connection()
     connection.autocommit = True
     cursor = connection.cursor()
@@ -59,8 +35,8 @@ def create(user):
         cursor.execute('''
             INSERT INTO users VALUES(%(id)s, %(state)s)
         ''', {
-            'id': user.id,
-            'state': user.state,
+            'id': id,
+            'state': state,
         })
         return True
     except OperationalError:

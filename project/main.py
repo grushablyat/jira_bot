@@ -3,7 +3,6 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 
 import jira_imitation
 from config import TG_TOKEN
-from model.user import User
 from project.button import Button, STATUS_MENU
 from service import user_repo, current_issue_repo, new_issue_repo
 from states import UserState
@@ -65,7 +64,7 @@ def start(message):
     BOT.send_message(chat.id, f'Добро пожаловать, {user.first_name}!')
 
     user_repo.delete(user.id)
-    user_repo.create(User(user.id, UserState.MENU))
+    user_repo.create(user.id, UserState.MENU)
 
     menu_menu(BOT, chat.id)
 
@@ -76,16 +75,16 @@ def text_handler(message):
     user = message.from_user
 
     # Getting user's state
-    result = user_repo.get_by_id(user.id)
+    current_state = user_repo.get_state_by_id(user.id)
 
-    if result is None:
+    if current_state is None:
         BOT.send_message(chat.id, "Пользователь не зарегистрирован, нажмите /start")
         return
 
     next_state = UserState.MENU
 
     try:
-        match result.state:
+        match current_state:
             case UserState.MENU:
                 if message.text == Button.LIST:
                     next_state = UserState.LIST
@@ -232,16 +231,16 @@ def callback_inline(call):
     user = call.from_user
 
     # Getting user's state
-    result = user_repo.get_by_id(user.id)
+    current_state = user_repo.get_state_by_id(user.id)
 
-    if result is None:
+    if current_state is None:
         BOT.send_message(chat.id, "Пользователь не зарегистрирован, нажмите /start")
         return
 
     next_state = UserState.MENU
 
     try:
-        match result.state:
+        match current_state:
             case UserState.LIST:
                 # is request to jira appropriate here?
                 for issue in jira_imitation.get_issues():

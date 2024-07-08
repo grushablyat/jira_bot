@@ -1,6 +1,5 @@
 from psycopg2 import OperationalError
 
-from project.model.current_issue import CurrentIssue
 from project.service import repo
 
 
