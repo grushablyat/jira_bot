@@ -162,7 +162,7 @@ def text_handler(message):
                     new_issue_repo.delete(user.id)
                 else:
                     next_state = UserState.NEW_ISSUE_ASSIGNEE
-                    new_issue_repo.update_title(user.id, message.text)
+                    new_issue_repo.update(user.id, 'title', message.text)
                     BOT.send_message(chat.id, 'Выберите исполнителя',
                                      reply_markup=create_markup(Button.NO_ONE, Button.CANCEL))
                     BOT.send_message(chat.id, 'Список исполнителей',
@@ -195,7 +195,7 @@ def text_handler(message):
                     new_issue_repo.delete(user.id)
                 else:
                     next_state = UserState.NEW_ISSUE_PREVIEW
-                    new_issue_repo.update_description(user.id, message.text)
+                    new_issue_repo.update(user.id, 'description', message.text)
                     issue = new_issue_repo.get_by_user_id(user.id)
                     issue.status = Button.TODO
                     BOT.send_message(chat.id, format_issue(issue), parse_mode='HTML')
@@ -265,7 +265,7 @@ def callback_inline(call):
                     if call.data == project.title:
                         next_state = UserState.NEW_ISSUE_TITLE
                         new_issue_repo.create(user.id)
-                        new_issue_repo.update_project(user.id, project.title)
+                        new_issue_repo.update(user.id, 'project', project.title)
                         BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
                                               text=f'Проект: <b>{project.title}</b>', reply_markup=None,
                                               parse_mode='HTML')
@@ -283,7 +283,7 @@ def callback_inline(call):
                 for assignee in jira_imitation.get_assignees():
                     if call.data == assignee.name:
                         next_state = UserState.NEW_ISSUE_DESCRIPTION
-                        new_issue_repo.update_assignee(user.id, assignee.name)
+                        new_issue_repo.update(user.id, 'assignee', assignee.name)
                         BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
                                               text=f'Исполнитель: <b>{assignee.name}</b>', reply_markup=None,
                                               parse_mode='HTML')

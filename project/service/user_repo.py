@@ -1,36 +1,107 @@
+from psycopg2 import OperationalError
+
 from project.model.user import User
-from project.service import repo
+from project.service import repo, current_issue_repo, new_issue_repo
 
 
 def get_all():
-    rs = repo.select(f'SELECT * FROM users')
+    connection = repo.create_connection()
+    cursor = connection.cursor()
+    result = None
+    try:
+        cursor.execute('''
+            SELECT * FROM users
+        ''')
+        result = cursor.fetchall()
+    except OperationalError:
+        pass
+    finally:
+        connection.close()
 
     users = []
-    for row in rs:
-        users.append(User(row['id'], row['state']))
+
+    if result is not None:
+        for row in result:
+            users.append(User(row[0], row[1]))
 
     return users
 
 
 def get_by_id(id):
-    rs = repo.select(f'SELECT * FROM users WHERE id={id}')
+    connection = repo.create_connection()
+    cursor = connection.cursor()
+    result = None
+    try:
+        cursor.execute('''
+            SELECT * FROM users WHERE id=%(id)s
+        ''', {
+            'id': id,
+        })
+        result = cursor.fetchall()
+    except OperationalError:
+        pass
+    finally:
+        connection.close()
 
     user = None
-    if len(rs) == 1:
-        user = User(rs[0][0], rs[0][1])
+    if result is not None:
+        if len(result) == 1:
+            user = User(result[0][0], result[0][1])
 
     return user
 
 
 def create(user):
-    return repo.execute_query(f'INSERT INTO users (id, state) VALUES ({user.id}, {user.state})')
+    connection = repo.create_connection()
+    connection.autocommit = True
+    cursor = connection.cursor()
+    try:
+        cursor.execute('''
+            INSERT INTO users VALUES(%(id)s, %(state)s)
+        ''', {
+            'id': user.id,
+            'state': user.state,
+        })
+        return True
+    except OperationalError:
+        return False
+    finally:
+        connection.close()
 
 
 def delete(id):
-    repo.execute_query(f'DELETE FROM current_issue WHERE user_id={id}')
-    repo.execute_query(f'DELETE FROM new_issue WHERE user_id={id}')
-    return repo.execute_query(f'DELETE FROM users WHERE id={id}')
+    current_issue_repo.delete(id)
+    new_issue_repo.delete(id)
+
+    connection = repo.create_connection()
+    connection.autocommit = True
+    cursor = connection.cursor()
+    try:
+        cursor.execute('''
+            DELETE FROM users WHERE id=%(id)s
+        ''', {
+            'id': id,
+        })
+        return True
+    except OperationalError:
+        return False
+    finally:
+        connection.close()
 
 
 def update(id, new_state):
-    return repo.execute_query(f'UPDATE users SET state={new_state} WHERE id={id}')
+    connection = repo.create_connection()
+    connection.autocommit = True
+    cursor = connection.cursor()
+    try:
+        cursor.execute('''
+                UPDATE users SET state= %(state)s WHERE id=%(id)s
+            ''', {
+            'id': id,
+            'state': new_state,
+        })
+        return True
+    except OperationalError:
+        return False
+    finally:
+        connection.close()
