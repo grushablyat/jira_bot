@@ -38,8 +38,8 @@ def format_issue(issue):
     return f'<b>{issue.title}</b> ({issue.status})\n{issue.assignee}\n\n{issue.description}'
 
 
-def menu_existing(bot, chat_id):
-    bot.send_message(chat_id, 'Выберите существующее действие')
+def menu_existing(bot, chat_id, text=None, inline_markup=None):
+    bot.send_message(chat_id, text if text else 'Выберите существующее действие', reply_markup=inline_markup)
 
 
 def menu_menu(bot, chat_id):
@@ -107,7 +107,10 @@ def text_handler(message):
                     menu_menu(BOT, chat.id)
                 else:
                     next_state = UserState.LIST
-                    menu_existing(BOT, chat.id)
+                    BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id-1,
+                                          text=f'Список задач', reply_markup=None)
+                    menu_existing(BOT, chat.id, 'Выберите существующую\nзадачу',
+                                  create_inline_markup(*jira_imitation.get_issues_titles()))
 
             case UserState.ISSUE:
                 if message.text == Button.STATUS:
@@ -147,7 +150,10 @@ def text_handler(message):
                     new_issue_repo.delete(user.id)
                 else:
                     next_state = UserState.NEW_ISSUE_PROJECT
-                    menu_existing(BOT, chat.id)
+                    BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id-1,
+                                          text=f'Список проектов', reply_markup=None)
+                    menu_existing(BOT, chat.id, 'Выберите существующий\nпроект',
+                                  create_inline_markup(*jira_imitation.get_projects_titles()))
 
             case UserState.NEW_ISSUE_TITLE:
                 if message.text == Button.CANCEL:
@@ -157,7 +163,8 @@ def text_handler(message):
                 else:
                     next_state = UserState.NEW_ISSUE_ASSIGNEE
                     new_issue_repo.update_title(user.id, message.text)
-                    BOT.send_message(chat.id, 'Выберите исполнителя', reply_markup=create_markup(Button.NO_ONE, Button.CANCEL))
+                    BOT.send_message(chat.id, 'Выберите исполнителя',
+                                     reply_markup=create_markup(Button.NO_ONE, Button.CANCEL))
                     BOT.send_message(chat.id, 'Список исполнителей',
                                      reply_markup=create_inline_markup(*jira_imitation.get_assignees_names()))
 
@@ -176,7 +183,10 @@ def text_handler(message):
                                      reply_markup=create_markup(Button.CANCEL))
                 else:
                     next_state = UserState.NEW_ISSUE_ASSIGNEE
-                    menu_existing(BOT, chat.id)
+                    BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id-1,
+                                          text=f'Список исполнителей', reply_markup=None)
+                    menu_existing(BOT, chat.id, 'Выберите существующего\nисполнителя',
+                                  create_inline_markup(*jira_imitation.get_assignees_names()))
 
             case UserState.NEW_ISSUE_DESCRIPTION:
                 if message.text == Button.CANCEL:
@@ -285,6 +295,10 @@ def callback_inline(call):
                     BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
                                           text=f'Нет такого исполнителя', reply_markup=None)
                     menu_existing(BOT, chat.id)
+
+            case UserState.MENU | UserState.ISSUE | UserState.STATUS | UserState.NEW_ISSUE_TITLE | \
+                 UserState.NEW_ISSUE_DESCRIPTION | UserState.NEW_ISSUE_PREVIEW:
+                 pass
 
             case _:
                 BOT.send_message(chat.id, "Неизвестное состояние, нажмите /start")
