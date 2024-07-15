@@ -226,14 +226,12 @@ def text_handler(message):
                     new_issue_repo.delete(user.id)
                     if issue is not None:
                         issue = testim_jira_api.create_issue(issue)
+                        current_issue_repo.create(user.id, issue.raw.get('key'))
+                        menu_issue(BOT, chat.id, issue)
                     else:
                         next_state = UserState.MENU
                         menu_existing(BOT, chat.id, 'Произошла ошибка, попробуйте снова')
                         menu_menu(BOT, chat.id)
-
-                    current_issue_repo.create(user.id, issue.id)
-
-                    menu_issue(BOT, chat.id, issue)
 
             case _:
                 BOT.send_message(chat.id, "Неизвестное состояние, нажмите /start")
