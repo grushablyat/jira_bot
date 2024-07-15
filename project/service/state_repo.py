@@ -1,17 +1,17 @@
 from psycopg2 import OperationalError
 
-from project.service import repo, current_issue_repo, new_issue_repo
+from project.service import repo
 
 
-def get_state_by_id(id):
+def get_state_by_id(user_id):
     connection = repo.create_connection()
     cursor = connection.cursor()
     result = None
     try:
         cursor.execute('''
-            SELECT * FROM users WHERE id=%(id)s
+            SELECT * FROM state WHERE user_id=%(user_id)s
         ''', {
-            'id': id,
+            'user_id': user_id,
         })
         result = cursor.fetchall()
     except OperationalError:
@@ -27,15 +27,15 @@ def get_state_by_id(id):
     return state
 
 
-def create(id, state):
+def create(user_id, state):
     connection = repo.create_connection()
     connection.autocommit = True
     cursor = connection.cursor()
     try:
         cursor.execute('''
-            INSERT INTO users VALUES(%(id)s, %(state)s)
+            INSERT INTO state VALUES(%(user_id)s, %(state)s)
         ''', {
-            'id': id,
+            'user_id': user_id,
             'state': state,
         })
         return True
@@ -45,18 +45,15 @@ def create(id, state):
         connection.close()
 
 
-def delete(id):
-    current_issue_repo.delete(id)
-    new_issue_repo.delete(id)
-
+def delete(user_id):
     connection = repo.create_connection()
     connection.autocommit = True
     cursor = connection.cursor()
     try:
         cursor.execute('''
-            DELETE FROM users WHERE id=%(id)s
+            DELETE FROM state WHERE user_id=%(user_id)s
         ''', {
-            'id': id,
+            'user_id': user_id,
         })
         return True
     except OperationalError:
@@ -65,15 +62,15 @@ def delete(id):
         connection.close()
 
 
-def update(id, new_state):
+def update(user_id, new_state):
     connection = repo.create_connection()
     connection.autocommit = True
     cursor = connection.cursor()
     try:
         cursor.execute('''
-                UPDATE users SET state= %(state)s WHERE id=%(id)s
+                UPDATE state SET state= %(state)s WHERE user_id=%(user_id)s
             ''', {
-            'id': id,
+            'user_id': user_id,
             'state': new_state,
         })
         return True

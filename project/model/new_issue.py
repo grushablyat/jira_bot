@@ -21,5 +21,5 @@ class NewIssue:
             'project': self.project,
             'summary': self.summary,
             'description': self.description,
-            'issuetype': 'Задача'
+            'issuetype': 10004
         }

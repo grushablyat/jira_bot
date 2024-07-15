@@ -4,7 +4,7 @@ from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 import testim_jira_api
 from button import Button, STATUS_MENU
 from config import TG_TOKEN
-from service import user_repo, current_issue_repo, new_issue_repo
+from service import state_repo, current_issue_repo, new_issue_repo
 from states import UserState
 
 
@@ -65,8 +65,10 @@ def start(message):
 
     BOT.send_message(chat.id, f'Добро пожаловать, {user.first_name}!')
 
-    user_repo.delete(user.id)
-    user_repo.create(user.id, UserState.MENU)
+    current_issue_repo.delete(user.id)
+    new_issue_repo.delete(user.id)
+    state_repo.delete(user.id)
+    state_repo.create(user.id, UserState.MENU)
 
     menu_menu(BOT, chat.id)
 
@@ -77,7 +79,7 @@ def text_handler(message):
     user = message.from_user
 
     # Getting user's state
-    current_state = user_repo.get_state_by_id(user.id)
+    current_state = state_repo.get_state_by_id(user.id)
 
     if current_state is None:
         BOT.send_message(chat.id, "Пользователь не зарегистрирован, нажмите /start")
@@ -237,7 +239,7 @@ def text_handler(message):
     except ValueError:
         BOT.send_message(chat.id, "Неизвестное состояние, нажмите /start")
 
-    user_repo.update(user.id, next_state)
+    state_repo.update(user.id, next_state)
 
 
 @BOT.callback_query_handler(func=lambda call: True)
@@ -246,7 +248,7 @@ def callback_inline(call):
     user = call.from_user
 
     # Getting user's state
-    current_state = user_repo.get_state_by_id(user.id)
+    current_state = state_repo.get_state_by_id(user.id)
 
     if current_state is None:
         BOT.send_message(chat.id, "Пользователь не зарегистрирован, нажмите /start")
@@ -317,7 +319,7 @@ def callback_inline(call):
     except ValueError:
         BOT.send_message(chat.id, "Неизвестное состояние, нажмите /start")
 
-    user_repo.update(user.id, next_state)
+    state_repo.update(user.id, next_state)
 
 
 if __name__ == '__main__':
