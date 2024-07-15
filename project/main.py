@@ -34,10 +34,8 @@ def create_inline_markup(*args):
 
 
 def format_issue(issue):
-    # return f'<b>{issue.title}</b> ({issue.status})\n{issue.assignee}\n\n{issue.description}'
-    # return issue
-    return (f'<b>{issue.get_field('summary')}</b> ({issue.fields.status})\n'
-            f'{issue.get_field('assignee')}\n\n'
+    return (f'<b>{issue.fields.summary}</b> ({issue.fields.status})\n'
+            f'{issue.fields.assignee}\n\n'
             f'{issue.fields.description}')
 
 
@@ -162,14 +160,14 @@ def text_handler(message):
                     menu_existing(BOT, chat.id, 'Выберите существующий\nпроект',
                                   create_inline_markup(*testim_jira_api.get_projects_keys()))
 
-            case UserState.NEW_ISSUE_TITLE:
+            case UserState.NEW_ISSUE_SUMMARY:
                 if message.text == Button.CANCEL:
                     next_state = UserState.MENU
                     menu_menu(BOT, chat.id)
                     new_issue_repo.delete(user.id)
                 else:
                     next_state = UserState.NEW_ISSUE_ASSIGNEE
-                    new_issue_repo.update(user.id, 'title', message.text)
+                    new_issue_repo.update(user.id, 'summary', message.text)
                     BOT.send_message(chat.id, 'Выберите исполнителя',
                                      reply_markup=create_markup(Button.NO_ONE, Button.CANCEL))
                     BOT.send_message(chat.id, 'Список исполнителей',
@@ -225,7 +223,7 @@ def text_handler(message):
                     issue = new_issue_repo.get_by_user_id(user.id)
                     new_issue_repo.delete(user.id)
                     if issue is not None:
-                        issue = testim_jira_api.create_issue(issue)
+                        issue = testim_jira_api.create_issue(issue.to_dict(), issue.assignee)
                         current_issue_repo.create(user.id, issue.raw.get('key'))
                         menu_issue(BOT, chat.id, issue)
                     else:
@@ -259,7 +257,6 @@ def callback_inline(call):
     try:
         match current_state:
             case UserState.LIST:
-                # is request to jira appropriate here?
                 for issue in testim_jira_api.get_issues():
                     if call.data == issue.raw.get('key'):
                         next_state = UserState.ISSUE
@@ -276,10 +273,9 @@ def callback_inline(call):
                     menu_existing(BOT, chat.id)
 
             case UserState.NEW_ISSUE_PROJECT:
-                # is request to jira appropriate here?
                 for pkey in testim_jira_api.get_projects_keys():
                     if call.data == pkey:
-                        next_state = UserState.NEW_ISSUE_TITLE
+                        next_state = UserState.NEW_ISSUE_SUMMARY
                         new_issue_repo.create(user.id)
                         new_issue_repo.update(user.id, 'project', pkey)
                         BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
@@ -295,7 +291,6 @@ def callback_inline(call):
                     menu_existing(BOT, chat.id)
 
             case UserState.NEW_ISSUE_ASSIGNEE:
-                # is request to jira appropriate here?
                 for assignee in testim_jira_api.get_assignees_names():
                     if call.data == assignee:
                         next_state = UserState.NEW_ISSUE_DESCRIPTION
@@ -312,7 +307,7 @@ def callback_inline(call):
                                           text=f'Нет такого исполнителя', reply_markup=None)
                     menu_existing(BOT, chat.id)
 
-            case UserState.MENU | UserState.ISSUE | UserState.STATUS | UserState.NEW_ISSUE_TITLE | \
+            case UserState.MENU | UserState.ISSUE | UserState.STATUS | UserState.NEW_ISSUE_SUMMARY | \
                  UserState.NEW_ISSUE_DESCRIPTION | UserState.NEW_ISSUE_PREVIEW:
                 pass
 

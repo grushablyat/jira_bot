@@ -46,17 +46,13 @@ def update_issue_status(issue_key, transition):
         print(e, end='\n\n')
 
 
-# issue_dict = {
-#     'project': {'name': 'NAME'} | {'id': ID} | {'key': 'KEY'},
-#     'summary': 'SUMMARY',
-#     'description': 'DESCRIPTION',
-#     'issuetype': {'name': 'NAME'},
-# }
-def create_issue(issue_dict):
+def create_issue(issue_dict, assignee=None):
     new_issue = None
 
     try:
         new_issue = jira.create_issue(fields=issue_dict)
+        if assignee:
+            jira.assign_issue(new_issue.raw.get('key'), assignee)
     except JIRAError as e:
         print('create_issue(...) error:')
         print(e, end='\n\n')
