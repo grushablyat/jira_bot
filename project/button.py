@@ -14,7 +14,7 @@ class Button(enum.StrEnum):
     STATUS = 'Изменить статус задачи'
 
     # STATUS
-    TODO = 'To do'
+    TODO = 'Reopen'
     IN_PROGRESS = 'In progress'
     DONE = 'Done'
 
@@ -25,4 +25,5 @@ class Button(enum.StrEnum):
     CREATE = 'Создать'
 
 
-STATUS_MENU = [Button.TODO, Button.IN_PROGRESS, Button.DONE, Button.CANCEL]
+# STATUS_MENU = [Button.TODO, Button.IN_PROGRESS, Button.DONE, Button.CANCEL]
+STATUS_MENU = [Button.TODO, Button.DONE, Button.CANCEL]

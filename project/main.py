@@ -1,7 +1,7 @@
 from telebot import TeleBot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
-import jira_imitation
+import testim_jira_api
 from button import Button, STATUS_MENU
 from config import TG_TOKEN
 from service import user_repo, current_issue_repo, new_issue_repo
@@ -34,7 +34,11 @@ def create_inline_markup(*args):
 
 
 def format_issue(issue):
-    return f'<b>{issue.title}</b> ({issue.status})\n{issue.assignee}\n\n{issue.description}'
+    # return f'<b>{issue.title}</b> ({issue.status})\n{issue.assignee}\n\n{issue.description}'
+    # return issue
+    return (f'<b>{issue.get_field('summary')}</b> ({issue.fields.status})\n'
+            f'{issue.get_field('assignee')}\n\n'
+            f'{issue.fields.description}')
 
 
 def menu_existing(bot, chat_id, text=None, inline_markup=None):
@@ -48,7 +52,7 @@ def menu_menu(bot, chat_id):
 
 def menu_list(bot, chat_id):
     bot.send_message(chat_id, 'Выберите задачу', reply_markup=create_markup(Button.BACK))
-    bot.send_message(chat_id, 'Список задач', reply_markup=create_inline_markup(*jira_imitation.get_issues_titles()))
+    bot.send_message(chat_id, 'Список задач', reply_markup=create_inline_markup(*testim_jira_api.get_issues_keys()))
 
 
 def menu_issue(bot, chat_id, issue):
@@ -93,7 +97,7 @@ def text_handler(message):
                     next_state = UserState.NEW_ISSUE_PROJECT
                     BOT.send_message(chat.id, 'Выберите проект', reply_markup=create_markup(Button.CANCEL))
                     BOT.send_message(chat.id, 'Список проектов',
-                                     reply_markup=create_inline_markup(*jira_imitation.get_projects_titles()))
+                                     reply_markup=create_inline_markup(*testim_jira_api.get_projects_keys()))
                 else:
                     next_state = UserState.MENU
                     menu_existing(BOT, chat.id)
@@ -109,14 +113,13 @@ def text_handler(message):
                     BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id-1,
                                           text=f'Список задач', reply_markup=None)
                     menu_existing(BOT, chat.id, 'Выберите существующую\nзадачу',
-                                  create_inline_markup(*jira_imitation.get_issues_titles()))
+                                  create_inline_markup(*testim_jira_api.get_issues_keys()))
 
             case UserState.ISSUE:
                 if message.text == Button.STATUS:
                     next_state = UserState.STATUS
                     BOT.send_message(chat.id, 'Выберите новый статус задачи',
-                                     reply_markup=create_markup(Button.TODO, Button.IN_PROGRESS,
-                                                                Button.DONE, Button.CANCEL))
+                                     reply_markup=create_markup(*STATUS_MENU))
                 elif message.text == Button.BACK:
                     next_state = UserState.LIST
                     current_issue_repo.delete(user.id)
@@ -128,13 +131,12 @@ def text_handler(message):
             case UserState.STATUS:
                 if message.text in STATUS_MENU:
                     next_state = UserState.ISSUE
-                    issue_id = current_issue_repo.get_by_user_id(user.id)
+                    issue_key = current_issue_repo.get_by_user_id(user.id)
 
-                    if issue_id is not None:
-                        if message.text == Button.CANCEL:
-                            issue = jira_imitation.get_issue_by_id(issue_id)
-                        else:
-                            issue = jira_imitation.update_issue_status(issue_id, message.text)
+                    if issue_key is not None:
+                        if message.text != Button.CANCEL:
+                            testim_jira_api.update_issue_status(issue_key, message.text)
+                        issue = testim_jira_api.get_issue_by_key(issue_key)
 
                         menu_issue(BOT, chat.id, issue)
                     else:
@@ -158,7 +160,7 @@ def text_handler(message):
                     BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id-1,
                                           text=f'Список проектов', reply_markup=None)
                     menu_existing(BOT, chat.id, 'Выберите существующий\nпроект',
-                                  create_inline_markup(*jira_imitation.get_projects_titles()))
+                                  create_inline_markup(*testim_jira_api.get_projects_keys()))
 
             case UserState.NEW_ISSUE_TITLE:
                 if message.text == Button.CANCEL:
@@ -171,7 +173,7 @@ def text_handler(message):
                     BOT.send_message(chat.id, 'Выберите исполнителя',
                                      reply_markup=create_markup(Button.NO_ONE, Button.CANCEL))
                     BOT.send_message(chat.id, 'Список исполнителей',
-                                     reply_markup=create_inline_markup(*jira_imitation.get_assignees_names()))
+                                     reply_markup=create_inline_markup(*testim_jira_api.get_assignees_names()))
 
             case UserState.NEW_ISSUE_ASSIGNEE:
                 if message.text == Button.CANCEL:
@@ -191,7 +193,7 @@ def text_handler(message):
                     BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id-1,
                                           text=f'Список исполнителей', reply_markup=None)
                     menu_existing(BOT, chat.id, 'Выберите существующего\nисполнителя',
-                                  create_inline_markup(*jira_imitation.get_assignees_names()))
+                                  create_inline_markup(*testim_jira_api.get_assignees_names()))
 
             case UserState.NEW_ISSUE_DESCRIPTION:
                 if message.text == Button.CANCEL:
@@ -223,7 +225,7 @@ def text_handler(message):
                     issue = new_issue_repo.get_by_user_id(user.id)
                     new_issue_repo.delete(user.id)
                     if issue is not None:
-                        issue = jira_imitation.create_issue(issue)
+                        issue = testim_jira_api.create_issue(issue)
                     else:
                         next_state = UserState.MENU
                         menu_existing(BOT, chat.id, 'Произошла ошибка, попробуйте снова')
@@ -260,12 +262,12 @@ def callback_inline(call):
         match current_state:
             case UserState.LIST:
                 # is request to jira appropriate here?
-                for issue in jira_imitation.get_issues():
-                    if call.data == issue.title:
+                for issue in testim_jira_api.get_issues():
+                    if call.data == issue.raw.get('key'):
                         next_state = UserState.ISSUE
-                        current_issue_repo.create(user.id, issue.id)
+                        current_issue_repo.create(user.id, issue.raw.get('key'))
                         BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
-                                              text=f'Задача: <b>{issue.title}</b>', reply_markup=None,
+                                              text=f'Задача: <b>{issue.raw.get('key')}</b>', reply_markup=None,
                                               parse_mode='HTML')
                         menu_issue(BOT, chat.id, issue)
                         break
@@ -277,13 +279,13 @@ def callback_inline(call):
 
             case UserState.NEW_ISSUE_PROJECT:
                 # is request to jira appropriate here?
-                for project in jira_imitation.get_projects():
-                    if call.data == project.title:
+                for pkey in testim_jira_api.get_projects_keys():
+                    if call.data == pkey:
                         next_state = UserState.NEW_ISSUE_TITLE
                         new_issue_repo.create(user.id)
-                        new_issue_repo.update(user.id, 'project', project.title)
+                        new_issue_repo.update(user.id, 'project', pkey)
                         BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
-                                              text=f'Проект: <b>{project.title}</b>', reply_markup=None,
+                                              text=f'Проект: <b>{pkey}</b>', reply_markup=None,
                                               parse_mode='HTML')
                         BOT.send_message(chat.id, 'Введите название задачи:',
                                          reply_markup=create_markup(Button.CANCEL))
@@ -296,12 +298,12 @@ def callback_inline(call):
 
             case UserState.NEW_ISSUE_ASSIGNEE:
                 # is request to jira appropriate here?
-                for assignee in jira_imitation.get_assignees():
-                    if call.data == assignee.name:
+                for assignee in testim_jira_api.get_assignees_names():
+                    if call.data == assignee:
                         next_state = UserState.NEW_ISSUE_DESCRIPTION
-                        new_issue_repo.update(user.id, 'assignee', assignee.name)
+                        new_issue_repo.update(user.id, 'assignee', assignee)
                         BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
-                                              text=f'Исполнитель: <b>{assignee.name}</b>', reply_markup=None,
+                                              text=f'Исполнитель: <b>{assignee}</b>', reply_markup=None,
                                               parse_mode='HTML')
                         BOT.send_message(chat.id, 'Введите описание задачи',
                                          reply_markup=create_markup(Button.CANCEL))
@@ -314,7 +316,7 @@ def callback_inline(call):
 
             case UserState.MENU | UserState.ISSUE | UserState.STATUS | UserState.NEW_ISSUE_TITLE | \
                  UserState.NEW_ISSUE_DESCRIPTION | UserState.NEW_ISSUE_PREVIEW:
-                 pass
+                pass
 
             case _:
                 BOT.send_message(chat.id, "Неизвестное состояние, нажмите /start")

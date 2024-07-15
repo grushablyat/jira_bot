@@ -10,7 +10,7 @@ CREATE TABLE users (
 
 CREATE TABLE current_issue (
     user_id DECIMAL PRIMARY KEY,
-    issue INT NOT NULL,
+    issue VARCHAR NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
