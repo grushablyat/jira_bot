@@ -19,25 +19,25 @@ def get_by_user_id(user_id):
     finally:
         connection.close()
 
-    issue_id = None
+    issue_key = None
 
     if result is not None:
         if len(result) == 1:
-            issue_id = result[0][1]
+            issue_key = result[0][1]
 
-    return issue_id
+    return issue_key
 
 
-def create(user_id, issue_id):
+def create(user_id, issue_key):
     connection = repo.create_connection()
     connection.autocommit = True
     cursor = connection.cursor()
     try:
         cursor.execute('''
-            INSERT INTO current_issue VALUES(%(user_id)s, %(issue_id)s)
+            INSERT INTO current_issue VALUES(%(user_id)s, %(issue_key)s)
         ''', {
             'user_id': user_id,
-            'issue_id': issue_id,
+            'issue_key': issue_key,
         })
         return True
     except OperationalError:
