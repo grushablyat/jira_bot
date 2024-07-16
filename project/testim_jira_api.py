@@ -6,11 +6,19 @@ from project.config import JIRA_URL, JIRA_USERNAME, JIRA_PASSWORD
 jira = JIRA(auth=(JIRA_USERNAME, JIRA_PASSWORD), options={'server': JIRA_URL})
 
 
-def get_issues(assignee=None):
+def get_issues(assignee=None, project=None, status=None):
     issues = []
 
     try:
-        issues = jira.search_issues('' if not assignee else f'assignee={assignee}')
+        jql_params = []
+        if assignee:
+            jql_params.append(f'assignee={assignee}')
+        if project:
+            jql_params.append(f'project={project}')
+        if status:
+            jql_params.append(f'status={status}')
+
+        issues = jira.search_issues('&'.join(jql_params))
     except JIRAError as e:
         print('get_issues() error:')
         print(e, end='\n\n')
@@ -18,9 +26,9 @@ def get_issues(assignee=None):
     return issues
 
 
-def get_issues_keys(assignee=None):
+def get_issues_keys(assignee=None, project=None, status=None):
     keys = []
-    for issue in get_issues(assignee):
+    for issue in get_issues(assignee, project, status):
         keys.append(issue.raw.get('key'))
 
     return keys

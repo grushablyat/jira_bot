@@ -17,7 +17,9 @@ CREATE TABLE state (
 
 CREATE TABLE current_issue (
     user_id DECIMAL PRIMARY KEY,
-    issue_key VARCHAR NOT NULL,
+    project VARCHAR,
+    status VARCHAR,
+    issue_key VARCHAR,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 

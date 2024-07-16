@@ -27,3 +27,4 @@ class Button(enum.StrEnum):
 
 # STATUS_MENU = [Button.REOPEN, Button.IN_PROGRESS, Button.DONE, Button.CANCEL]
 STATUS_MENU = [Button.REOPEN, Button.DONE]
+STATUSES = ['To Do', 'Done']
