@@ -50,16 +50,16 @@ def menu_menu(chat_id):
 
 
 def menu_list(chat_id, user_id):
-    assignee = user_repo.get_by_id(user_id)
+    user = user_repo.get_by_id(user_id)
 
-    if assignee.admin:
-        assignee = None
+    if user.is_manager:
+        user = None
     else:
-        assignee = assignee.jira_username
+        user = user.jira_username
 
     BOT.send_message(chat_id, 'Выберите задачу', reply_markup=create_markup(Button.BACK))
     BOT.send_message(chat_id, 'Список задач:',
-                     reply_markup=create_inline_markup(*testim_jira_api.get_issues_keys(assignee)))
+                     reply_markup=create_inline_markup(*testim_jira_api.get_issues_keys(user)))
 
 
 def menu_issue(chat_id, issue):
@@ -112,13 +112,13 @@ def text_handler(message):
                     next_state = UserState.LIST
                     menu_list(chat.id, user.id)
                 elif message.text == Button.NEW_ISSUE_PROJECT:
-                    if user_repo.get_by_id(user.id).admin:
+                    if user_repo.get_by_id(user.id).is_manager:
                         next_state = UserState.NEW_ISSUE_PROJECT
                         BOT.send_message(chat.id, 'Выберите проект', reply_markup=create_markup(Button.CANCEL))
                         menu_new_issue_project(chat.id)
                     else:
                         next_state = UserState.MENU
-                        BOT.send_message(chat.id, 'Функция создания задачи доступна только администраторам')
+                        BOT.send_message(chat.id, 'Функция создания задачи доступна только менеджерам')
                 else:
                     next_state = UserState.MENU
                     menu_existing(chat.id)

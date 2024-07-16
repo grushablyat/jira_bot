@@ -6,7 +6,7 @@ DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     id DECIMAL NOT NULL PRIMARY KEY,
     jira_username VARCHAR,
-    admin BOOLEAN
+    is_manager BOOLEAN
 )
 
 CREATE TABLE state (
