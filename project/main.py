@@ -33,9 +33,11 @@ def create_inline_markup(*args):
 
 
 def format_issue(issue):
-    return (f'<b>{issue.fields.summary}</b> ({issue.fields.status})\n'
-            f'{issue.fields.assignee}\n\n'
-            f'{issue.fields.description}')
+    return (f'<b><i>Задача</i></b>:\n{issue.key}\n\n'
+            f'<b><i>Название</i></b>:\n{issue.fields.summary}\n\n'
+            f'<b><i>Исполнитель</i></b>:\n{issue.fields.assignee if issue.fields.assignee else 'Нет'}\n\n'
+            f'<b><i>Статус</i></b>:\n{issue.fields.status}\n\n'
+            f'<b><i>Описание</i></b>:\n{issue.fields.description}')
 
 
 def menu_existing(chat_id, text=None, inline_markup=None):
@@ -280,8 +282,7 @@ def callback_inline(call):
                         next_state = UserState.ISSUE
                         current_issue_repo.create(user.id, issue.raw.get('key'))
                         BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
-                                              text=f'Задача: <b>{issue.raw.get('key')}</b>', reply_markup=None,
-                                              parse_mode='HTML')
+                                              text=f'Список задач', reply_markup=None)
                         menu_issue(chat.id, issue)
                         break
                 else:

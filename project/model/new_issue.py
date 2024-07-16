@@ -3,11 +3,12 @@ class NewIssue:
         def __init__(self, project, summary, assignee, description):
             self.project = project
             self.summary = summary
-            self.status = 'To do'
+            self.status = 'To Do'
             self.assignee = assignee
             self.description = description
 
     def __init__(self, user_id, project, summary, assignee, description):
+        self.key = project + '-X'
         self.user_id = user_id
         self.project = project
         self.summary = summary
