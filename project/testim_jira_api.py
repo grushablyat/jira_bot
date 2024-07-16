@@ -41,9 +41,11 @@ def get_issue_by_key(key):
 def update_issue_status(issue_key, transition):
     try:
         jira.transition_issue(issue_key, transition)
+        return True
     except JIRAError as e:
         print('update_issue_status(...) error:')
         print(e, end='\n\n')
+        return False
 
 
 def create_issue(issue_dict, assignee=None):

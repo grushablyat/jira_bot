@@ -52,7 +52,10 @@ def menu_menu(chat_id):
 def menu_list(chat_id, user_id):
     user = user_repo.get_by_id(user_id)
 
-    if user.is_manager:
+    if user is None:
+        BOT.send_message(chat_id, 'Пользователь не зарегистрирован, обратитесь к администратору')
+        return
+    elif user.is_manager:
         user = None
     else:
         user = user.jira_username
@@ -112,7 +115,10 @@ def text_handler(message):
                     next_state = UserState.LIST
                     menu_list(chat.id, user.id)
                 elif message.text == Button.NEW_ISSUE_PROJECT:
-                    if user_repo.get_by_id(user.id).is_manager:
+                    this_user = user_repo.get_by_id(user.id)
+                    if this_user is None:
+                        BOT.send_message(chat.id, 'Пользователь не зарегистрирован, обратитесь к администратору')
+                    elif this_user.is_manager:
                         next_state = UserState.NEW_ISSUE_PROJECT
                         BOT.send_message(chat.id, 'Выберите проект', reply_markup=create_markup(Button.CANCEL))
                         menu_new_issue_project(chat.id)
@@ -160,7 +166,12 @@ def text_handler(message):
                     if issue_key is not None:
                         issue = testim_jira_api.get_issue_by_key(issue_key)
 
-                        menu_issue(chat.id, issue)
+                        if issue is None:
+                            next_state = UserState.LIST
+                            BOT.send_message(chat.id, 'Задача не найдена или соединение с Jira прервано')
+                            menu_list(chat.id, user.id)
+                        else:
+                            menu_issue(chat.id, issue)
                     else:
                         next_state = UserState.LIST
                         current_issue_repo.delete(user.id)
@@ -246,8 +257,13 @@ def text_handler(message):
                     new_issue_repo.delete(user.id)
                     if issue is not None:
                         issue = testim_jira_api.create_issue(issue.to_dict(), issue.assignee)
-                        current_issue_repo.create(user.id, issue.raw.get('key'))
-                        menu_issue(chat.id, issue)
+                        if issue is None:
+                            next_state = UserState.MENU
+                            BOT.send_message(chat.id, 'Задача не найдена или соединение с Jira прервано')
+                            menu_menu(chat.id)
+                        else:
+                            current_issue_repo.create(user.id, issue.raw.get('key'))
+                            menu_issue(chat.id, issue)
                     else:
                         next_state = UserState.MENU
                         menu_existing(chat.id, 'Произошла ошибка, попробуйте снова')
@@ -304,7 +320,13 @@ def callback_inline(call):
                         testim_jira_api.update_issue_status(issue_key, call.data)
                         issue = testim_jira_api.get_issue_by_key(issue_key)
 
-                        menu_issue(chat.id, issue)
+                        if issue is None:
+                            next_state = UserState.LIST
+                            current_issue_repo.delete(user.id)
+                            BOT.send_message(chat.id, 'Задача не найдена или соединение с Jira прервано')
+                            menu_list(chat.id, user.id)
+                        else:
+                            menu_issue(chat.id, issue)
                     else:
                         next_state = UserState.LIST
                         current_issue_repo.delete(user.id)
