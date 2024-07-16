@@ -138,8 +138,10 @@ def text_handler(message):
             case UserState.ISSUE:
                 if message.text == Button.STATUS:
                     next_state = UserState.STATUS
+                    BOT.send_message(chat.id, 'Изменение статуса задачи',
+                                     reply_markup=create_markup(Button.CANCEL))
                     BOT.send_message(chat.id, 'Выберите новый статус задачи',
-                                     reply_markup=create_markup(*STATUS_MENU))
+                                     reply_markup=create_inline_markup(*STATUS_MENU))
                 elif message.text == Button.BACK:
                     next_state = UserState.LIST
                     current_issue_repo.delete(user.id)
@@ -149,13 +151,13 @@ def text_handler(message):
                     menu_existing(chat.id)
 
             case UserState.STATUS:
-                if message.text in STATUS_MENU:
+                if message.text == Button.CANCEL:
+                    BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id - 1,
+                                          text=f'Статус не изменен', reply_markup=None)
                     next_state = UserState.ISSUE
                     issue_key = current_issue_repo.get_by_user_id(user.id)
 
                     if issue_key is not None:
-                        if message.text != Button.CANCEL:
-                            testim_jira_api.update_issue_status(issue_key, message.text)
                         issue = testim_jira_api.get_issue_by_key(issue_key)
 
                         menu_issue(chat.id, issue)
@@ -224,7 +226,6 @@ def text_handler(message):
                     new_issue_repo.update(user.id, 'description', message.text)
                     issue = new_issue_repo.get_by_user_id(user.id)
                     if issue is not None:
-                        issue.status = Button.TODO
                         BOT.send_message(chat.id, format_issue(issue), parse_mode='HTML')
                         BOT.send_message(chat.id, 'Подтвердите создание задачи',
                                          reply_markup=create_markup(Button.CREATE, Button.CANCEL))
@@ -289,6 +290,30 @@ def callback_inline(call):
                     next_state = UserState.LIST
                     BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
                                           text=f'Нет такой задачи', reply_markup=None)
+                    menu_existing(chat.id)
+
+            case UserState.STATUS:
+                if call.data in STATUS_MENU:
+                    BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
+                                          text=f'Новый статус: <b>{call.data}</b>', reply_markup=None,
+                                          parse_mode='HTML')
+                    next_state = UserState.ISSUE
+                    issue_key = current_issue_repo.get_by_user_id(user.id)
+
+                    if issue_key is not None:
+                        testim_jira_api.update_issue_status(issue_key, call.data)
+                        issue = testim_jira_api.get_issue_by_key(issue_key)
+
+                        menu_issue(chat.id, issue)
+                    else:
+                        next_state = UserState.LIST
+                        current_issue_repo.delete(user.id)
+                        menu_existing(chat.id, "Произошла ошибка, попробуйте снова")
+                        menu_list(chat.id, user.id)
+                else:
+                    next_state = UserState.ISSUE
+                    BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
+                                          text=f'Нет такого статуса, нажмите /start', reply_markup=None)
                     menu_existing(chat.id)
 
             case UserState.NEW_ISSUE_PROJECT:
