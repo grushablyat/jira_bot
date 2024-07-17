@@ -11,23 +11,25 @@ BOT = TeleBot(token=TG_TOKEN)
 
 
 def create_markup(*args):
-    actions = []
+    options = []
     for arg in args:
-        actions.append(KeyboardButton(arg))
+        options.append(KeyboardButton(arg))
 
     markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(*actions)
+    markup.add(*options)
 
     return markup
 
 
-def create_inline_markup(*args):
-    actions = []
+def create_inline_markup(args, default=None):
+    options = []
     for arg in args:
-        actions.append(InlineKeyboardButton(arg, callback_data=arg))
+        options.append(InlineKeyboardButton(arg, callback_data=arg))
 
     markup = InlineKeyboardMarkup()
-    markup.add(*actions)
+    markup.add(*options)
+    if default:
+        markup.add(InlineKeyboardButton(default, callback_data=default))
 
     return markup
 
@@ -52,17 +54,17 @@ def menu_menu(chat_id):
 def menu_list_projects(chat_id):
     BOT.send_message(chat_id, 'Фильтр', reply_markup=create_markup(Button.BACK))
     BOT.send_message(chat_id, 'Выберите проект:',
-                     reply_markup=create_inline_markup(*testim_jira_api.get_projects_keys(), 'Без фильтра'))
+                     reply_markup=create_inline_markup(testim_jira_api.get_projects_keys(), default='Без фильтра'))
 
 
 def menu_list_statuses_edit(chat_id, message_id):
     BOT.edit_message_text(chat_id=chat_id, message_id=message_id, text=f'Выберите статус:',
-                          reply_markup=create_inline_markup(*STATUSES, 'Без фильтра'))
+                          reply_markup=create_inline_markup(STATUSES, default='Без фильтра'))
 
 
 def menu_list_statuses_new(chat_id):
     BOT.send_message(chat_id, 'Выберите статус:',
-                     reply_markup=create_inline_markup(*STATUSES, 'Без фильтра'))
+                     reply_markup=create_inline_markup(STATUSES, default='Без фильтра'))
 
 
 def menu_list_issue(chat_id, user_id):
@@ -98,20 +100,20 @@ def menu_list_issues_edit(chat_id, user_id, message_id):
     params, filters = menu_list_issue(chat_id, user_id)
     BOT.edit_message_text(chat_id=chat_id, message_id=message_id,
                           text=f'{'\n'.join(filters)}\nВыберите задачу:',
-                          reply_markup=create_inline_markup(*testim_jira_api.get_issues_keys(*params)))
+                          reply_markup=create_inline_markup(testim_jira_api.get_issues_keys(*params)))
 
 
 def menu_list_issues_new(chat_id, user_id):
     params, filters = menu_list_issue(chat_id, user_id)
     BOT.send_message(chat_id, f'{'\n'.join(filters)}\nВыберите задачу:',
-                     reply_markup=create_inline_markup(*testim_jira_api.get_issues_keys(*params)))
+                     reply_markup=create_inline_markup(testim_jira_api.get_issues_keys(*params)))
 
 
 def menu_list_issues_back(chat_id, user_id):
     params, filters = menu_list_issue(chat_id, user_id)
     BOT.send_message(chat_id, 'Список задач', reply_markup=create_markup(Button.BACK))
     BOT.send_message(chat_id, f'{'\n'.join(filters)}\nВыберите задачу:',
-                     reply_markup=create_inline_markup(*testim_jira_api.get_issues_keys(*params)))
+                     reply_markup=create_inline_markup(testim_jira_api.get_issues_keys(*params)))
 
 
 def menu_issue(chat_id, issue):
@@ -121,12 +123,12 @@ def menu_issue(chat_id, issue):
 
 def menu_new_issue_project(chat_id):
     BOT.send_message(chat_id, 'Список проектов:',
-                     reply_markup=create_inline_markup(*testim_jira_api.get_projects_keys()))
+                     reply_markup=create_inline_markup(testim_jira_api.get_projects_keys()))
 
 
 def menu_new_issue_assignee(chat_id):
     BOT.send_message(chat_id, 'Список исполнителей:',
-                     reply_markup=create_inline_markup(*testim_jira_api.get_assignees_names()))
+                     reply_markup=create_inline_markup(testim_jira_api.get_assignees_names()))
 
 
 @BOT.message_handler(commands=['start'])
@@ -229,7 +231,7 @@ def text_handler(message):
                     BOT.send_message(chat.id, 'Изменение статуса задачи',
                                      reply_markup=create_markup(Button.CANCEL))
                     BOT.send_message(chat.id, 'Выберите новый статус задачи',
-                                     reply_markup=create_inline_markup(*STATUS_MENU))
+                                     reply_markup=create_inline_markup(STATUS_MENU))
                 elif message.text == Button.BACK:
                     next_state = UserState.LIST_ISSUES
                     current_issue_repo.update(user.id, 'issue_key', None)
