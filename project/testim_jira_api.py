@@ -6,6 +6,20 @@ from project.config import JIRA_URL, JIRA_USERNAME, JIRA_PASSWORD
 jira = JIRA(auth=(JIRA_USERNAME, JIRA_PASSWORD), options={'server': JIRA_URL})
 
 
+def get_possible_transitions(issue_key):
+    transitions = []
+
+    try:
+        tr = jira.transitions(issue_key)
+        for transition in tr:
+            transitions.append(transition['name'])
+    except JIRAError as e:
+        print('get_possible_transitions error:')
+        print(e, end='\n\n')
+
+    return transitions
+
+
 def get_issues(assignee=None, project=None, status=None):
     issues = []
 

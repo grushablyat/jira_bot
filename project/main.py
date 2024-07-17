@@ -228,10 +228,19 @@ def text_handler(message):
             case UserState.ISSUE:
                 if message.text == Button.STATUS:
                     next_state = UserState.STATUS
-                    BOT.send_message(chat.id, 'Изменение статуса задачи',
-                                     reply_markup=create_markup(Button.CANCEL))
-                    BOT.send_message(chat.id, 'Выберите новый статус задачи',
-                                     reply_markup=create_inline_markup(STATUS_MENU))
+                    issue = current_issue_repo.get_by_user_id(user.id)
+                    if issue is not None:
+                        BOT.send_message(chat.id, 'Изменение статуса задачи',
+                                         reply_markup=create_markup(Button.CANCEL))
+                        BOT.send_message(chat.id, 'Выберите новый статус задачи',
+                                         reply_markup=create_inline_markup(
+                                             testim_jira_api.get_possible_transitions(issue.key)))
+                    else:
+                        next_state = UserState.LIST_ISSUES
+                        BOT.send_message(chat.id, 'Задача не найдена или соединение с Jira прервано')
+                        current_issue_repo.update(user.id, 'issue_key', None)
+                        menu_list_issues_back(chat.id, user.id)
+
                 elif message.text == Button.BACK:
                     next_state = UserState.LIST_ISSUES
                     current_issue_repo.update(user.id, 'issue_key', None)
@@ -437,7 +446,13 @@ def callback_inline(call):
                     menu_existing(chat.id)
 
             case UserState.STATUS:
-                if call.data in STATUS_MENU:
+                issue = current_issue_repo.get_by_user_id(user.id)
+                if issue is None:
+                    next_state = UserState.LIST_ISSUES
+                    current_issue_repo.update(user.id, 'issue_key', None)
+                    menu_existing(chat.id, "Произошла ошибка, попробуйте снова")
+                    menu_list_issues_back(chat.id, user.id)
+                elif call.data in testim_jira_api.get_possible_transitions(issue.key):
                     BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
                                           text=f'Новый статус: <b>{call.data}</b>', reply_markup=None,
                                           parse_mode='HTML')
