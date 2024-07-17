@@ -134,6 +134,11 @@ def start(message):
     chat = message.chat
     user = message.from_user
 
+    if user_repo.get_by_id(user.id) is None:
+        BOT.send_message(chat.id, 'Пользователь не зарегистрирован, обратитесь к администратору',
+                         reply_markup=create_markup(Button.BACK))
+        return
+
     BOT.send_message(chat.id, f'Добро пожаловать, {user.first_name}!')
 
     current_issue_repo.delete(user.id)
@@ -152,7 +157,7 @@ def text_handler(message):
     current_state = state_repo.get_state_by_id(user.id)
 
     if current_state is None:
-        BOT.send_message(chat.id, "Пользователь не зарегистрирован, нажмите /start")
+        BOT.send_message(chat.id, "Произошла ошибка, нажмите /start")
         return
 
     next_state = UserState.MENU
@@ -350,10 +355,10 @@ def text_handler(message):
                         menu_menu(chat.id)
 
             case _:
-                BOT.send_message(chat.id, "Неизвестное состояние, нажмите /start")
+                BOT.send_message(chat.id, "Произошла ошибка, нажмите /start")
 
     except ValueError:
-        BOT.send_message(chat.id, "Неизвестное состояние, нажмите /start")
+        BOT.send_message(chat.id, "Произошла ошибка, нажмите /start")
 
     state_repo.update(user.id, next_state)
 
@@ -366,7 +371,7 @@ def callback_inline(call):
     current_state = state_repo.get_state_by_id(user.id)
 
     if current_state is None:
-        BOT.send_message(chat.id, "Пользователь не зарегистрирован, нажмите /start")
+        BOT.send_message(chat.id, "Произошла ошибка, нажмите /start")
         return
 
     next_state = UserState.MENU
@@ -499,10 +504,10 @@ def callback_inline(call):
                 pass
 
             case _:
-                BOT.send_message(chat.id, "Неизвестное состояние, нажмите /start")
+                BOT.send_message(chat.id, "Произошла ошибка, нажмите /start")
 
     except ValueError:
-        BOT.send_message(chat.id, "Неизвестное состояние, нажмите /start")
+        BOT.send_message(chat.id, "Произошла ошибка, нажмите /start")
 
     state_repo.update(user.id, next_state)
 
