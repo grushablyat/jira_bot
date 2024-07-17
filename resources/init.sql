@@ -12,7 +12,7 @@ CREATE TABLE users (
 CREATE TABLE state (
     user_id DECIMAL PRIMARY KEY,
     state INT,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE current_issue (
@@ -20,7 +20,7 @@ CREATE TABLE current_issue (
     project VARCHAR,
     status VARCHAR,
     issue_key VARCHAR,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 CREATE TABLE new_issue (
@@ -29,5 +29,5 @@ CREATE TABLE new_issue (
     summary VARCHAR,
     assignee VARCHAR,
     description TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
