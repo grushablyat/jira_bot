@@ -27,7 +27,7 @@ class NewIssue:
                 'project': self.project,
                 'summary': self.summary,
                 'description': self.description,
-                'issuetype': int(types[0]),
+                'issuetype': 10004 if '10004' in types else 10000 if '10000' in types else int(types[0]),
             }
         except ValueError:
             return None
