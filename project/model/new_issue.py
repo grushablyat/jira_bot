@@ -3,7 +3,7 @@ class NewIssue:
         def __init__(self, project, summary, assignee, description):
             self.project = project
             self.summary = summary
-            self.status = 'To Do'
+            self.status = None
             self.assignee = assignee
             self.description = description
 
