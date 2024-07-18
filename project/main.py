@@ -2,7 +2,7 @@ from telebot import TeleBot
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 import testim_jira_api
-from button import Button, STATUS_MENU, STATUSES
+from button import Button
 from config import TG_TOKEN
 from service import user_repo, state_repo, current_issue_repo, new_issue_repo
 from states import UserState
@@ -38,7 +38,7 @@ def format_issue(issue):
     return (f'<b><i>Задача</i></b>:\n{issue.key}\n\n'
             f'<b><i>Название</i></b>:\n{issue.fields.summary}\n\n'
             f'<b><i>Исполнитель</i></b>:\n{issue.fields.assignee if issue.fields.assignee else 'Нет'}\n\n'
-            f'<b><i>Статус</i></b>:\n{issue.fields.status}\n\n'
+            f'{f'<b><i>Статус</i></b>:\n{issue.fields.status}\n\n' if issue.fields.status else ''}'
             f'<b><i>Описание</i></b>:\n{issue.fields.description}')
 
 
@@ -57,14 +57,30 @@ def menu_list_projects(chat_id):
                      reply_markup=create_inline_markup(testim_jira_api.get_projects_keys(), default='Без фильтра'))
 
 
-def menu_list_statuses_edit(chat_id, message_id):
+def menu_list_statuses_edit(chat_id, message_id, user_id):
+    current_issue = current_issue_repo.get_by_user_id(user_id)
+
+    if current_issue is None:
+        BOT.send_message(chat_id, 'Произошла ошибка, нажмите /start')
+        return
+
+    pkey = current_issue.project
     BOT.edit_message_text(chat_id=chat_id, message_id=message_id, text=f'Выберите статус:',
-                          reply_markup=create_inline_markup(STATUSES, default='Без фильтра'))
+                          reply_markup=create_inline_markup(testim_jira_api.get_possible_statuses(pkey),
+                                                            default='Без фильтра'))
 
 
-def menu_list_statuses_new(chat_id):
+def menu_list_statuses_new(chat_id, user_id):
+    current_issue = current_issue_repo.get_by_user_id(user_id)
+
+    if current_issue is None:
+        BOT.send_message(chat_id, 'Произошла ошибка, нажмите /start')
+        return
+
+    pkey = current_issue.project
     BOT.send_message(chat_id, 'Выберите статус:',
-                     reply_markup=create_inline_markup(STATUSES, default='Без фильтра'))
+                     reply_markup=create_inline_markup(testim_jira_api.get_possible_statuses(pkey),
+                                                       default='Без фильтра'))
 
 
 def menu_list_issue(chat_id, user_id):
@@ -126,9 +142,16 @@ def menu_new_issue_project(chat_id):
                      reply_markup=create_inline_markup(testim_jira_api.get_projects_keys()))
 
 
-def menu_new_issue_assignee(chat_id):
+def menu_new_issue_assignee(chat_id, user_id):
+    new_issue = new_issue_repo.get_by_user_id(user_id)
+
+    if new_issue is None:
+        BOT.send_message(chat_id, 'Произошла ошибка, нажмите /start')
+        return
+
+    pkey = new_issue.project
     BOT.send_message(chat_id, 'Список исполнителей:',
-                     reply_markup=create_inline_markup(testim_jira_api.get_assignees_names()))
+                     reply_markup=create_inline_markup(testim_jira_api.get_assignable_users(pkey)))
 
 
 @BOT.message_handler(commands=['start'])
@@ -209,7 +232,7 @@ def text_handler(message):
 
                     BOT.send_message(chat.id, 'Выберите существующий статус',
                                      reply_markup=create_markup(Button.BACK))
-                    menu_list_statuses_new(chat.id)
+                    menu_list_statuses_new(chat.id, user.id)
 
             case UserState.LIST_ISSUES:
                 BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id - 1,
@@ -228,10 +251,19 @@ def text_handler(message):
             case UserState.ISSUE:
                 if message.text == Button.STATUS:
                     next_state = UserState.STATUS
-                    BOT.send_message(chat.id, 'Изменение статуса задачи',
-                                     reply_markup=create_markup(Button.CANCEL))
-                    BOT.send_message(chat.id, 'Выберите новый статус задачи',
-                                     reply_markup=create_inline_markup(STATUS_MENU))
+                    issue = current_issue_repo.get_by_user_id(user.id)
+                    if issue is not None:
+                        BOT.send_message(chat.id, 'Изменение статуса задачи',
+                                         reply_markup=create_markup(Button.CANCEL))
+                        BOT.send_message(chat.id, 'Выберите операцию',
+                                         reply_markup=create_inline_markup(
+                                             testim_jira_api.get_possible_transitions(issue.key)))
+                    else:
+                        next_state = UserState.LIST_ISSUES
+                        BOT.send_message(chat.id, 'Задача не найдена или соединение с Jira прервано')
+                        current_issue_repo.update(user.id, 'issue_key', None)
+                        menu_list_issues_back(chat.id, user.id)
+
                 elif message.text == Button.BACK:
                     next_state = UserState.LIST_ISSUES
                     current_issue_repo.update(user.id, 'issue_key', None)
@@ -291,7 +323,7 @@ def text_handler(message):
                     new_issue_repo.update(user.id, 'summary', message.text)
                     BOT.send_message(chat.id, 'Выберите исполнителя',
                                      reply_markup=create_markup(Button.NO_ONE, Button.CANCEL))
-                    menu_new_issue_assignee(chat.id)
+                    menu_new_issue_assignee(chat.id, user.id)
 
             case UserState.NEW_ISSUE_ASSIGNEE:
                 if message.text == Button.CANCEL:
@@ -311,7 +343,7 @@ def text_handler(message):
                     BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id - 1,
                                           text=f'Список исполнителей', reply_markup=None)
                     BOT.send_message(chat.id, 'Выберите существующего исполнителя')
-                    menu_new_issue_assignee(chat.id)
+                    menu_new_issue_assignee(chat.id, user.id)
 
             case UserState.NEW_ISSUE_DESCRIPTION:
                 if message.text == Button.CANCEL:
@@ -342,7 +374,13 @@ def text_handler(message):
                     issue = new_issue_repo.get_by_user_id(user.id)
                     new_issue_repo.delete(user.id)
                     if issue is not None:
-                        issue = testim_jira_api.create_issue(issue.to_dict(), issue.assignee)
+                        dictionary = issue.to_dict()
+
+                        if dictionary is None:
+                            BOT.send_message(chat.id, 'Произошла ошибка, нажмите /start')
+                            return
+
+                        issue = testim_jira_api.create_issue(dictionary, issue.assignee)
                         if issue is None:
                             next_state = UserState.MENU
                             BOT.send_message(chat.id, 'Задача не найдена или соединение с Jira прервано')
@@ -386,13 +424,13 @@ def callback_inline(call):
                         next_state = UserState.LIST_STATUSES
                         current_issue_repo.create(user.id)
                         current_issue_repo.update(user.id, 'project', pkey)
-                        menu_list_statuses_edit(chat.id, call.message.message_id)
+                        menu_list_statuses_edit(chat.id, call.message.message_id, user.id)
                         break
                 else:
                     if call.data == 'Без фильтра':
                         next_state = UserState.LIST_STATUSES
                         current_issue_repo.create(user.id)
-                        menu_list_statuses_edit(chat.id, call.message.message_id)
+                        menu_list_statuses_edit(chat.id, call.message.message_id, user.id)
                     else:
                         # UNREACHABLE
                         next_state = UserState.LIST_PROJECTS
@@ -401,10 +439,19 @@ def callback_inline(call):
                         menu_existing(chat.id)
 
             case UserState.LIST_STATUSES:
-                for status in STATUSES:
+                current_issue = current_issue_repo.get_by_user_id(user.id)
+
+                if current_issue is None:
+                    BOT.send_message(chat.id, 'Произошла ошибка, нажмите /start')
+                    return
+
+                pkey = current_issue.project
+
+                for status in testim_jira_api.get_possible_statuses(pkey):
                     if call.data == status:
                         next_state = UserState.LIST_ISSUES
-                        current_issue_repo.update(user.id, 'status', f'\'{status}\'')
+                        # current_issue_repo.update(user.id, 'status', f'\'{status}\'')
+                        current_issue_repo.update(user.id, 'status', status)
                         menu_list_issues_edit(chat.id, user.id, call.message.message_id)
                         break
                 else:
@@ -437,9 +484,15 @@ def callback_inline(call):
                     menu_existing(chat.id)
 
             case UserState.STATUS:
-                if call.data in STATUS_MENU:
+                issue = current_issue_repo.get_by_user_id(user.id)
+                if issue is None:
+                    next_state = UserState.LIST_ISSUES
+                    current_issue_repo.update(user.id, 'issue_key', None)
+                    menu_existing(chat.id, "Произошла ошибка, попробуйте снова")
+                    menu_list_issues_back(chat.id, user.id)
+                elif call.data in testim_jira_api.get_possible_transitions(issue.key):
                     BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
-                                          text=f'Новый статус: <b>{call.data}</b>', reply_markup=None,
+                                          text=f'Операция: <b>{call.data}</b>', reply_markup=None,
                                           parse_mode='HTML')
                     next_state = UserState.ISSUE
                     current_issue = current_issue_repo.get_by_user_id(user.id)
@@ -485,7 +538,15 @@ def callback_inline(call):
                     menu_existing(chat.id)
 
             case UserState.NEW_ISSUE_ASSIGNEE:
-                for assignee in testim_jira_api.get_assignees_names():
+                new_issue = new_issue_repo.get_by_user_id(user.id)
+
+                if new_issue is None:
+                    BOT.send_message(chat.id, 'Произошла ошибка, нажмите /start')
+                    return
+
+                pkey = new_issue.project
+
+                for assignee in testim_jira_api.get_assignable_users(pkey):
                     if call.data == assignee:
                         next_state = UserState.NEW_ISSUE_DESCRIPTION
                         new_issue_repo.update(user.id, 'assignee', assignee)
