@@ -163,8 +163,8 @@ def get_possible_issue_types(pkey):
     try:
         it = jira.issue_types_for_project(pkey)
         for issue_type in it:
-            issue_types.append(issue_type.raw.get('id'))
-    except JIRAError as e:
+            issue_types.append(int(issue_type.raw.get('id')))
+    except JIRAError | ValueError as e:
         print('get_possible_issuetypes() error:')
         print(e, end='\n\n')
 

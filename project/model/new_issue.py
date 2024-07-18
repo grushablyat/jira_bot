@@ -21,13 +21,10 @@ class NewIssue:
         self.fields = self.Fields(project, summary, assignee, description)
 
     def to_dict(self):
-        try:
-            types = get_possible_issue_types(self.project)
-            return None if not types or len(types) == 0 else {
-                'project': self.project,
-                'summary': self.summary,
-                'description': self.description,
-                'issuetype': 10004 if '10004' in types else 10000 if '10000' in types else int(types[0]),
-            }
-        except ValueError:
-            return None
+        types = get_possible_issue_types(self.project)
+        return None if not types or len(types) == 0 else {
+            'project': self.project,
+            'summary': self.summary,
+            'description': self.description,
+            'issuetype': 10004 if 10004 in types else 10000 if 10000 in types else types[0],
+        }
