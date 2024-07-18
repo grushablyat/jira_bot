@@ -157,15 +157,15 @@ def get_possible_statuses(pkey):
     return statuses
 
 
-def get_possible_issuetypes(pkey):
-    issuetypes = []
+def get_possible_issue_types(pkey):
+    issue_types = []
 
     try:
         it = jira.issue_types_for_project(pkey)
-        for issuetype in it:
-            issuetypes.append(issuetype.raw.get('id'))
+        for issue_type in it:
+            issue_types.append(issue_type.raw.get('id'))
     except JIRAError as e:
         print('get_possible_issuetypes() error:')
         print(e, end='\n\n')
 
-    return issuetypes
+    return issue_types

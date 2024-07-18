@@ -374,7 +374,13 @@ def text_handler(message):
                     issue = new_issue_repo.get_by_user_id(user.id)
                     new_issue_repo.delete(user.id)
                     if issue is not None:
-                        issue = testim_jira_api.create_issue(issue.to_dict(), issue.assignee)
+                        dictionary = issue.to_dict()
+
+                        if dictionary is None:
+                            BOT.send_message(chat.id, 'Произошла ошибка, нажмите /start')
+                            return
+
+                        issue = testim_jira_api.create_issue(dictionary, issue.assignee)
                         if issue is None:
                             next_state = UserState.MENU
                             BOT.send_message(chat.id, 'Задача не найдена или соединение с Jira прервано')
