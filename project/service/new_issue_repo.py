@@ -1,4 +1,4 @@
-from psycopg2 import OperationalError
+from psycopg2 import OperationalError, DatabaseError
 
 from project.model.new_issue import NewIssue
 from project.service import repo
@@ -40,7 +40,7 @@ def create(user_id):
             'user_id': user_id,
         })
         return True
-    except OperationalError:
+    except DatabaseError:
         return False
     finally:
         connection.close()
