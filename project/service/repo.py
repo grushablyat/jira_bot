@@ -1,6 +1,10 @@
+import logging
+
 from psycopg2 import connect, OperationalError
 
 from project.config import DBC
+
+db_logger = logging.getLogger(__name__)
 
 
 def create_connection():
@@ -13,7 +17,7 @@ def create_connection():
             host=DBC['host'],
             port=DBC['port'],
         )
-    except OperationalError:
-        pass
+    except OperationalError as e:
+        db_logger.error(e)
 
     return connection

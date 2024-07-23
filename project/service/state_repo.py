@@ -5,6 +5,10 @@ from project.service import repo
 
 def get_by_user_id(user_id):
     connection = repo.create_connection()
+
+    if not connection:
+        return None
+
     cursor = connection.cursor()
     result = None
     try:
@@ -14,8 +18,8 @@ def get_by_user_id(user_id):
             'user_id': user_id,
         })
         result = cursor.fetchall()
-    except OperationalError:
-        pass
+    except OperationalError as e:
+        repo.db_logger.error(e)
     finally:
         connection.close()
 
@@ -30,6 +34,10 @@ def get_by_user_id(user_id):
 
 def create(user_id, state):
     connection = repo.create_connection()
+
+    if not connection:
+        return None
+
     connection.autocommit = True
     cursor = connection.cursor()
     try:
@@ -40,7 +48,8 @@ def create(user_id, state):
             'state': state,
         })
         return True
-    except DatabaseError:
+    except DatabaseError as e:
+        repo.db_logger.error(e)
         return False
     finally:
         connection.close()
@@ -48,6 +57,10 @@ def create(user_id, state):
 
 def delete(user_id):
     connection = repo.create_connection()
+
+    if not connection:
+        return None
+
     connection.autocommit = True
     cursor = connection.cursor()
     try:
@@ -57,7 +70,8 @@ def delete(user_id):
             'user_id': user_id,
         })
         return True
-    except OperationalError:
+    except OperationalError as e:
+        repo.db_logger.error(e)
         return False
     finally:
         connection.close()
@@ -65,6 +79,10 @@ def delete(user_id):
 
 def update(user_id, new_state):
     connection = repo.create_connection()
+
+    if not connection:
+        return None
+
     connection.autocommit = True
     cursor = connection.cursor()
     try:
@@ -75,7 +93,8 @@ def update(user_id, new_state):
             'state': new_state,
         })
         return True
-    except OperationalError:
+    except OperationalError as e:
+        repo.db_logger.error(e)
         return False
     finally:
         connection.close()
