@@ -3,6 +3,7 @@ import enum
 
 class UserState(enum.IntEnum):
     MENU = 0
+    ERROR = 1
 
     LIST_PROJECTS = 11
     LIST_STATUSES = 12

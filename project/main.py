@@ -1,4 +1,5 @@
 from telebot import TeleBot
+from telebot.apihelper import ApiException
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 import testim_jira_api
@@ -43,7 +44,8 @@ def format_issue(issue):
 
 
 def menu_existing(chat_id, text=None, inline_markup=None):
-    BOT.send_message(chat_id, text if text else 'Выберите существующее действие', reply_markup=inline_markup)
+    BOT.send_message(chat_id, text if text else 'Выберите существующее действие или нажмите /start',
+                     reply_markup=inline_markup)
 
 
 def menu_menu(chat_id):
@@ -61,7 +63,7 @@ def menu_list_statuses_edit(chat_id, message_id, user_id):
     current_issue = current_issue_repo.get_by_user_id(user_id)
 
     if current_issue is None:
-        BOT.send_message(chat_id, 'Произошла ошибка, нажмите /start')
+        menu_error(chat_id, user_id)
         return
 
     pkey = current_issue.project
@@ -74,7 +76,7 @@ def menu_list_statuses_new(chat_id, user_id):
     current_issue = current_issue_repo.get_by_user_id(user_id)
 
     if current_issue is None:
-        BOT.send_message(chat_id, 'Произошла ошибка, нажмите /start')
+        menu_error(chat_id, user_id)
         return
 
     pkey = current_issue.project
@@ -146,12 +148,17 @@ def menu_new_issue_assignee(chat_id, user_id):
     new_issue = new_issue_repo.get_by_user_id(user_id)
 
     if new_issue is None:
-        BOT.send_message(chat_id, 'Произошла ошибка, нажмите /start')
+        menu_error(chat_id, user_id)
         return
 
     pkey = new_issue.project
     BOT.send_message(chat_id, 'Список исполнителей:',
                      reply_markup=create_inline_markup(testim_jira_api.get_assignable_users(pkey)))
+
+
+def menu_error(chat_id, user_id):
+    BOT.send_message(chat_id, "Произошла ошибка, нажмите /start", reply_markup=create_markup('/start'))
+    state_repo.update(user_id, UserState.ERROR)
 
 
 @BOT.message_handler(commands=['start'])
@@ -182,7 +189,7 @@ def text_handler(message):
     current_state = state_repo.get_by_user_id(user.id)
 
     if current_state is None:
-        BOT.send_message(chat.id, "Произошла ошибка, нажмите /start")
+        menu_error(chat.id, user.id)
         return
 
     next_state = UserState.MENU
@@ -377,7 +384,7 @@ def text_handler(message):
                         dictionary = issue.to_dict()
 
                         if dictionary is None:
-                            BOT.send_message(chat.id, 'Произошла ошибка, нажмите /start')
+                            menu_error(chat.id, user.id)
                             return
 
                         issue = testim_jira_api.create_issue(dictionary, issue.assignee)
@@ -395,10 +402,14 @@ def text_handler(message):
                         menu_menu(chat.id)
 
             case _:
-                BOT.send_message(chat.id, "Произошла ошибка, нажмите /start")
+                menu_error(chat.id, user.id)
+                return
 
     except ValueError:
-        BOT.send_message(chat.id, "Произошла ошибка, нажмите /start")
+        menu_error(chat.id, user.id)
+        return
+    except ApiException:
+        pass
 
     state_repo.update(user.id, next_state)
 
@@ -411,7 +422,7 @@ def callback_inline(call):
     current_state = state_repo.get_by_user_id(user.id)
 
     if current_state is None:
-        BOT.send_message(chat.id, "Произошла ошибка, нажмите /start")
+        menu_error(chat.id, user.id)
         return
 
     next_state = UserState.MENU
@@ -442,7 +453,7 @@ def callback_inline(call):
                 current_issue = current_issue_repo.get_by_user_id(user.id)
 
                 if current_issue is None:
-                    BOT.send_message(chat.id, 'Произошла ошибка, нажмите /start')
+                    menu_error(chat.id, user.id)
                     return
 
                 pkey = current_issue.project
@@ -516,7 +527,7 @@ def callback_inline(call):
                 else:
                     next_state = UserState.ISSUE
                     BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
-                                          text=f'Нет такого статуса, нажмите /start', reply_markup=None)
+                                          text=f'Нет такого статуса', reply_markup=None)
                     menu_existing(chat.id)
 
             case UserState.NEW_ISSUE_PROJECT:
@@ -541,7 +552,7 @@ def callback_inline(call):
                 new_issue = new_issue_repo.get_by_user_id(user.id)
 
                 if new_issue is None:
-                    BOT.send_message(chat.id, 'Произошла ошибка, нажмите /start')
+                    menu_error(chat.id, user.id)
                     return
 
                 pkey = new_issue.project
@@ -567,10 +578,14 @@ def callback_inline(call):
                 pass
 
             case _:
-                BOT.send_message(chat.id, "Произошла ошибка, нажмите /start")
+                menu_error(chat.id, user.id)
+                return
 
     except ValueError:
-        BOT.send_message(chat.id, "Произошла ошибка, нажмите /start")
+        menu_error(chat.id, user.id)
+        return
+    except ApiException:
+        pass
 
     state_repo.update(user.id, next_state)
 
