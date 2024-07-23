@@ -83,7 +83,7 @@ def menu_list_statuses_new(chat_id, user_id):
                                                        default='Без фильтра'))
 
 
-def menu_list_issue(chat_id, user_id):
+def menu_list_issues(chat_id, user_id):
     user = user_repo.get_by_id(user_id)
 
     if user is None:
@@ -113,20 +113,20 @@ def menu_list_issue(chat_id, user_id):
 
 
 def menu_list_issues_edit(chat_id, user_id, message_id):
-    params, filters = menu_list_issue(chat_id, user_id)
+    params, filters = menu_list_issues(chat_id, user_id)
     BOT.edit_message_text(chat_id=chat_id, message_id=message_id,
                           text=f'{'\n'.join(filters)}\nВыберите задачу:',
                           reply_markup=create_inline_markup(testim_jira_api.get_issues_keys(*params)))
 
 
 def menu_list_issues_new(chat_id, user_id):
-    params, filters = menu_list_issue(chat_id, user_id)
+    params, filters = menu_list_issues(chat_id, user_id)
     BOT.send_message(chat_id, f'{'\n'.join(filters)}\nВыберите задачу:',
                      reply_markup=create_inline_markup(testim_jira_api.get_issues_keys(*params)))
 
 
 def menu_list_issues_back(chat_id, user_id):
-    params, filters = menu_list_issue(chat_id, user_id)
+    params, filters = menu_list_issues(chat_id, user_id)
     BOT.send_message(chat_id, 'Список задач', reply_markup=create_markup(Button.BACK))
     BOT.send_message(chat_id, f'{'\n'.join(filters)}\nВыберите задачу:',
                      reply_markup=create_inline_markup(testim_jira_api.get_issues_keys(*params)))
@@ -179,7 +179,7 @@ def text_handler(message):
     chat = message.chat
     user = message.from_user
 
-    current_state = state_repo.get_state_by_id(user.id)
+    current_state = state_repo.get_by_user_id(user.id)
 
     if current_state is None:
         BOT.send_message(chat.id, "Произошла ошибка, нажмите /start")
@@ -408,7 +408,7 @@ def callback_inline(call):
     chat = call.message.chat
     user = call.from_user
 
-    current_state = state_repo.get_state_by_id(user.id)
+    current_state = state_repo.get_by_user_id(user.id)
 
     if current_state is None:
         BOT.send_message(chat.id, "Произошла ошибка, нажмите /start")

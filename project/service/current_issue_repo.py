@@ -20,13 +20,13 @@ def get_by_user_id(user_id):
     finally:
         connection.close()
 
-    issue_key = None
+    issue = None
 
     if result is not None:
         if len(result) == 1:
-            issue_key = CurrentIssue(result[0][1], result[0][2], result[0][3])
+            issue = CurrentIssue(result[0][1], result[0][2], result[0][3])
 
-    return issue_key
+    return issue
 
 
 def create(user_id):

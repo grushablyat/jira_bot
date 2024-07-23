@@ -3,7 +3,7 @@ from psycopg2 import OperationalError, DatabaseError
 from project.service import repo
 
 
-def get_state_by_id(user_id):
+def get_by_user_id(user_id):
     connection = repo.create_connection()
     cursor = connection.cursor()
     result = None
@@ -20,6 +20,7 @@ def get_state_by_id(user_id):
         connection.close()
 
     state = None
+
     if result is not None:
         if len(result) == 1:
             state = result[0][1]
@@ -68,8 +69,8 @@ def update(user_id, new_state):
     cursor = connection.cursor()
     try:
         cursor.execute('''
-                UPDATE state SET state= %(state)s WHERE user_id=%(user_id)s
-            ''', {
+            UPDATE state SET state= %(state)s WHERE user_id=%(user_id)s
+        ''', {
             'user_id': user_id,
             'state': new_state,
         })
