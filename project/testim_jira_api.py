@@ -1,4 +1,5 @@
 import json
+import logging
 
 import requests
 from jira import JIRA, JIRAError
@@ -6,6 +7,8 @@ from requests.auth import HTTPBasicAuth
 
 from project.config import JIRA_URL, JIRA_USERNAME, JIRA_PASSWORD
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='jira_bot.log')
 
 jira = JIRA(auth=(JIRA_USERNAME, JIRA_PASSWORD), options={'server': JIRA_URL})
 
@@ -31,8 +34,7 @@ def get_issues(assignee=None, project=None, status=None):
             issues = issues_unfiltered
 
     except JIRAError as e:
-        print('get_issues() error:')
-        print(e, end='\n\n')
+        logger.error(e)
 
     return issues
 
@@ -53,8 +55,7 @@ def get_projects_keys():
     try:
         projects = jira.projects()
     except JIRAError as e:
-        print('get_projects_keys() error:')
-        print(e, end='\n\n')
+        logger.error(e)
 
     if projects:
         for project in projects:
@@ -90,8 +91,7 @@ def get_possible_statuses(pkey):
                 statuses.append(status.name)
 
     except JIRAError as e:
-        print('get_possible_statuses error:')
-        print(e, end='\n\n')
+        logger.error(e)
 
     return statuses
 
@@ -102,8 +102,7 @@ def get_issue_by_key(key):
     try:
         issue = jira.issue(key)
     except JIRAError as e:
-        print('get_issue_by_key(...) error:')
-        print(e, end='\n\n')
+        logger.error(e)
 
     return issue
 
@@ -116,8 +115,7 @@ def get_possible_transitions(issue_key):
         for transition in transitions:
             transitions_names.append(transition['name'])
     except JIRAError as e:
-        print('get_possible_transitions error:')
-        print(e, end='\n\n')
+        logger.error(e)
 
     return transitions_names
 
@@ -127,8 +125,7 @@ def update_issue_status(issue_key, transition):
         jira.transition_issue(issue_key, transition)
         return True
     except JIRAError as e:
-        print('update_issue_status(...) error:')
-        print(e, end='\n\n')
+        logger.error(e)
         return False
 
 
@@ -140,8 +137,7 @@ def create_issue(issue_dict, assignee=None):
         if assignee:
             jira.assign_issue(new_issue.raw.get('key'), assignee)
     except JIRAError as e:
-        print('create_issue(...) error:')
-        print(e, end='\n\n')
+        logger.error(e)
 
     return new_issue
 
@@ -154,8 +150,7 @@ def get_assignable_users(pkey):
         for user in users:
             names.append(user.raw.get('name'))
     except JIRAError as e:
-        print('get_assignees_names() error:')
-        print(e, end='\n\n')
+        logger.error(e)
 
     return names
 
@@ -168,7 +163,6 @@ def get_possible_issue_types(pkey):
         for issue_type in it:
             issue_types.append(int(issue_type.raw.get('id')))
     except JIRAError | ValueError as e:
-        print('get_possible_issuetypes() error:')
-        print(e, end='\n\n')
+        logger.error(e)
 
     return issue_types
