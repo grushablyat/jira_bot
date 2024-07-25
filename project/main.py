@@ -2,12 +2,12 @@ import logging
 
 from telebot import TeleBot
 from telebot.apihelper import ApiException
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 
 import testim_jira_api
 from button import Button
 from config import TG_TOKEN
-from service import user_repo, state_repo, current_issue_repo, new_issue_repo
+from service import current_issue_repo, new_issue_repo, state_repo, user_repo
 from states import UserState
 
 logging.basicConfig(filename='jira_bot.log')

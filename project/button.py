@@ -1,7 +1,7 @@
-import enum
+from enum import StrEnum
 
 
-class Button(enum.StrEnum):
+class Button(StrEnum):
     # COMMON
     BACK = '⬅️ Назад'
     CANCEL = '❌ Отмена'
