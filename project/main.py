@@ -60,7 +60,7 @@ def menu_menu(chat_id):
 def menu_list_projects(chat_id):
     BOT.send_message(chat_id, 'Фильтр', reply_markup=create_markup(Button.BACK))
     BOT.send_message(chat_id, 'Выберите проект:',
-                     reply_markup=create_inline_markup(testim_jira_api.get_projects_keys(), default='Без фильтра'))
+                     reply_markup=create_inline_markup(testim_jira_api.get_projects_keys(), default=Button.NO_FILTER))
 
 
 def menu_list_statuses_edit(chat_id, message_id, user_id):
@@ -73,7 +73,7 @@ def menu_list_statuses_edit(chat_id, message_id, user_id):
     pkey = current_issue.project
     BOT.edit_message_text(chat_id=chat_id, message_id=message_id, text=f'Выберите статус:',
                           reply_markup=create_inline_markup(testim_jira_api.get_possible_statuses(pkey),
-                                                            default='Без фильтра'))
+                                                            default=Button.NO_FILTER))
 
 
 def menu_list_statuses_new(chat_id, user_id):
@@ -86,7 +86,7 @@ def menu_list_statuses_new(chat_id, user_id):
     pkey = current_issue.project
     BOT.send_message(chat_id, 'Выберите статус:',
                      reply_markup=create_inline_markup(testim_jira_api.get_possible_statuses(pkey),
-                                                       default='Без фильтра'))
+                                                       default=Button.NO_FILTER))
 
 
 def menu_list_issues(chat_id, user_id):
@@ -156,8 +156,9 @@ def menu_new_issue_assignee(chat_id, user_id):
         return
 
     pkey = new_issue.project
-    BOT.send_message(chat_id, 'Список исполнителей:',
-                     reply_markup=create_inline_markup(testim_jira_api.get_assignable_users(pkey)))
+    BOT.send_message(chat_id, 'Выберите исполнителя:',
+                     reply_markup=create_inline_markup(testim_jira_api.get_assignable_users(pkey),
+                                                       default=Button.NO_ASSIGNEE))
 
 
 def menu_error(chat_id, user_id):
@@ -332,8 +333,6 @@ def text_handler(message):
                 else:
                     next_state = UserState.NEW_ISSUE_ASSIGNEE
                     new_issue_repo.update(user.id, 'summary', message.text)
-                    BOT.send_message(chat.id, 'Выберите исполнителя',
-                                     reply_markup=create_markup(Button.NO_ONE, Button.CANCEL))
                     menu_new_issue_assignee(chat.id, user.id)
 
             case UserState.NEW_ISSUE_ASSIGNEE:
@@ -343,12 +342,12 @@ def text_handler(message):
                                           text=f'Список исполнителей', reply_markup=None)
                     menu_menu(chat.id)
                     new_issue_repo.delete(user.id)
-                elif message.text == Button.NO_ONE:
-                    next_state = UserState.NEW_ISSUE_DESCRIPTION
-                    BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id - 1,
-                                          text=f'Без исполнителя', reply_markup=None)
-                    BOT.send_message(chat.id, 'Введите описание задачи',
-                                     reply_markup=create_markup(Button.CANCEL))
+                # elif message.text == Button.NO_ASSIGNEE:
+                #     next_state = UserState.NEW_ISSUE_DESCRIPTION
+                #     BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id - 1,
+                #                           text=f'Без исполнителя', reply_markup=None)
+                #     BOT.send_message(chat.id, 'Введите описание задачи',
+                #                      reply_markup=create_markup(Button.CANCEL))
                 else:
                     next_state = UserState.NEW_ISSUE_ASSIGNEE
                     BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id - 1,
@@ -404,6 +403,10 @@ def text_handler(message):
                         next_state = UserState.MENU
                         menu_existing(chat.id, 'Произошла ошибка, попробуйте снова')
                         menu_menu(chat.id)
+                else:
+                    next_state = UserState.MENU
+                    menu_existing(chat.id, 'Произошла ошибка, попробуйте снова')
+                    menu_menu(chat.id)
 
             case _:
                 menu_error(chat.id, user.id)
@@ -442,7 +445,7 @@ def callback_inline(call):
                         menu_list_statuses_edit(chat.id, call.message.message_id, user.id)
                         break
                 else:
-                    if call.data == 'Без фильтра':
+                    if call.data == Button.NO_FILTER:
                         next_state = UserState.LIST_STATUSES
                         current_issue_repo.create(user.id)
                         menu_list_statuses_edit(chat.id, call.message.message_id, user.id)
@@ -470,7 +473,7 @@ def callback_inline(call):
                         menu_list_issues_edit(chat.id, user.id, call.message.message_id)
                         break
                 else:
-                    if call.data == 'Без фильтра':
+                    if call.data == Button.NO_FILTER:
                         next_state = UserState.LIST_ISSUES
                         current_issue_repo.update(user.id, 'status', None)
 
@@ -572,10 +575,17 @@ def callback_inline(call):
                                          reply_markup=create_markup(Button.CANCEL))
                         break
                 else:
-                    next_state = UserState.NEW_ISSUE_ASSIGNEE
-                    BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
-                                          text=f'Нет такого исполнителя', reply_markup=None)
-                    menu_existing(chat.id)
+                    if call.data == Button.NO_ASSIGNEE:
+                        next_state = UserState.NEW_ISSUE_DESCRIPTION
+                        BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
+                                              text=Button.NO_ASSIGNEE, reply_markup=None)
+                        BOT.send_message(chat.id, 'Введите описание задачи',
+                                         reply_markup=create_markup(Button.CANCEL))
+                    else:
+                        next_state = UserState.NEW_ISSUE_ASSIGNEE
+                        BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
+                                              text=f'Нет такого исполнителя', reply_markup=None)
+                        menu_existing(chat.id)
 
             case UserState.MENU | UserState.ISSUE | UserState.STATUS | UserState.NEW_ISSUE_SUMMARY | \
                  UserState.NEW_ISSUE_DESCRIPTION | UserState.NEW_ISSUE_PREVIEW:
