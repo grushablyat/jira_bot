@@ -5,13 +5,16 @@
 ```python
 # project/config.py
 
-TG_TOKEN = 'TG_TOKEN'
-JIRA_URL = 'JIRA_URL'
+LOG_FILE = 'LOG_FILE'
 
-# Jira user should have administrator rights
+TG_TOKEN = 'TG_TOKEN'
+
+# Jira config (jira user should have administrator rights)
 JIRA_USERNAME = 'JIRA_USERNAME'
 JIRA_PASSWORD = 'JIRA_PASSWORD'
+JIRA_URL = 'JIRA_URL'
 
+# Database connectivity config
 DBC = {
     'username': 'USERNAME',
     'password': 'PASSWORD',

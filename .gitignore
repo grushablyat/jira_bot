@@ -1,2 +1,5 @@
 # Telegram and database configuration
 project/config.py
+
+# Logs
+*.log

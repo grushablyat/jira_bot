@@ -6,11 +6,11 @@ from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardBu
 
 import testim_jira_api
 from button import Button
-from config import TG_TOKEN
+from config import LOG_FILE, TG_TOKEN
 from service import current_issue_repo, new_issue_repo, state_repo, user_repo
 from states import UserState
 
-logging.basicConfig(filename='jira_bot.log')
+logging.basicConfig(filename=LOG_FILE)
 
 BOT = TeleBot(token=TG_TOKEN)
 
