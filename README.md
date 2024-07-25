@@ -24,40 +24,6 @@ DBC = {
 }
 ```
 
-## Структура БД
-
-```mermaid
-erDiagram
-    users {
-        decimal id
-        varchar jira_username
-        boolean is_manager
-    }
-    users ||--o| state : has
-    users ||--o| current_issue : might-have
-    users ||--o| new_issue : might-have
-    
-    state {
-        decimal user_id
-        int state
-    }
-    
-    current_issue {
-        decimal user_id
-        varchar project
-        varchar status
-        varchar issue_key
-    }
-    
-    new_issue {
-        decimal user_id
-        varchar project
-        varchar summary
-        varchar assignee
-        text description
-    }
-```
-
 ## Требуемые пакеты
 
 1. jira
