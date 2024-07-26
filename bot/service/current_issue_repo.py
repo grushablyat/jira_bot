@@ -1,7 +1,7 @@
 from psycopg2 import OperationalError, DatabaseError
 
-from project.model.current_issue import CurrentIssue
-from project.service import repo
+from bot.model.current_issue import CurrentIssue
+from bot.service import repo
 
 
 def get_by_user_id(user_id):

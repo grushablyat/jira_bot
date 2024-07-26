@@ -1,6 +1,7 @@
 from psycopg2 import OperationalError, DatabaseError
 
-from project.service import repo
+from bot.model.new_issue import NewIssue
+from bot.service import repo
 
 
 def get_by_user_id(user_id):
@@ -13,7 +14,7 @@ def get_by_user_id(user_id):
     result = None
     try:
         cursor.execute('''
-            SELECT * FROM state WHERE user_id=%(user_id)s
+            SELECT * FROM new_issue WHERE user_id=%(user_id)s
         ''', {
             'user_id': user_id,
         })
@@ -23,16 +24,16 @@ def get_by_user_id(user_id):
     finally:
         connection.close()
 
-    state = None
+    issue = None
 
     if result is not None:
         if len(result) == 1:
-            state = result[0][1]
+            issue = NewIssue(result[0][0], result[0][1], result[0][2], result[0][3], result[0][4])
 
-    return state
+    return issue
 
 
-def create(user_id, state):
+def create(user_id):
     connection = repo.create_connection()
 
     if not connection:
@@ -42,10 +43,9 @@ def create(user_id, state):
     cursor = connection.cursor()
     try:
         cursor.execute('''
-            INSERT INTO state VALUES(%(user_id)s, %(state)s)
+            INSERT INTO new_issue VALUES(%(user_id)s)
         ''', {
             'user_id': user_id,
-            'state': state,
         })
         return True
     except DatabaseError as e:
@@ -65,7 +65,7 @@ def delete(user_id):
     cursor = connection.cursor()
     try:
         cursor.execute('''
-            DELETE FROM state WHERE user_id=%(user_id)s
+            DELETE FROM new_issue WHERE user_id=%(user_id)s
         ''', {
             'user_id': user_id,
         })
@@ -77,7 +77,7 @@ def delete(user_id):
         connection.close()
 
 
-def update(user_id, new_state):
+def update(user_id, field, value):
     connection = repo.create_connection()
 
     if not connection:
@@ -86,11 +86,11 @@ def update(user_id, new_state):
     connection.autocommit = True
     cursor = connection.cursor()
     try:
-        cursor.execute('''
-            UPDATE state SET state= %(state)s WHERE user_id=%(user_id)s
+        cursor.execute(f'''
+            UPDATE new_issue SET {field}= %(value)s WHERE user_id=%(user_id)s
         ''', {
             'user_id': user_id,
-            'state': new_state,
+            'value': value,
         })
         return True
     except OperationalError as e:

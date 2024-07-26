@@ -1,9 +1,9 @@
 # Telegram-бот для управления задачами Jira
 
-## Конфигурация `project/config.py`
+## Конфигурация `bot/config.py`
 
 ```python
-# project/config.py
+# bot/config.py
 
 LOG_FILE = 'LOG_FILE'
 

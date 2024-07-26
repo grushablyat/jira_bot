@@ -2,7 +2,7 @@
 .idea
 
 # Telegram and database configuration
-project/config.py
+bot/config.py
 
 # Logs
 *.log

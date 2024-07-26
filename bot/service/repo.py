@@ -2,7 +2,7 @@ import logging
 
 from psycopg2 import connect, OperationalError
 
-from project.config import DBC
+from bot.config import DBC
 
 db_logger = logging.getLogger(__name__)
 

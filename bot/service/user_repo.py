@@ -1,7 +1,7 @@
 from psycopg2 import OperationalError
 
-from project.model.user import User
-from project.service import repo
+from bot.model.user import User
+from bot.service import repo
 
 
 def get_by_id(user_id):
