@@ -23,10 +23,3 @@ DBC = {
     'database': 'DATABASE',
 }
 ```
-
-## Требуемые пакеты
-
-1. jira
-2. psycopg2
-3. requests
-4. telebot (pyTelegramBotAPI)
