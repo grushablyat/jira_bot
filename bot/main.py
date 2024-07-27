@@ -26,15 +26,22 @@ def create_markup(*args):
     return markup
 
 
-def create_inline_markup(args, default=None):
-    options = []
-    for arg in args:
-        options.append(InlineKeyboardButton(arg, callback_data=arg))
-
+def create_inline_markup(default=None, options=None):
     markup = InlineKeyboardMarkup()
-    markup.add(*options)
+
+    if options:
+        buttons = []
+
+        for option in options:
+            buttons.append(InlineKeyboardButton(option, callback_data=option))
+
+        markup.add(*buttons)
+
     if default:
         markup.add(InlineKeyboardButton(default, callback_data=default))
+
+    if not options and not default:
+        markup.add(InlineKeyboardButton('-пусто-', callback_data='-'))
 
     return markup
 
@@ -59,8 +66,9 @@ def menu_menu(chat_id):
 
 def menu_list_projects(chat_id):
     BOT.send_message(chat_id, 'Фильтр', reply_markup=create_markup(Button.BACK))
-    BOT.send_message(chat_id, 'Выберите проект:',
-                     reply_markup=create_inline_markup(testim_jira_api.get_projects_keys(), default=Button.NO_FILTER))
+    BOT.send_message(chat_id, 'Выберите проект',
+                     reply_markup=create_inline_markup(default=Button.NO_FILTER,
+                                                       options=testim_jira_api.get_projects_keys()))
 
 
 def menu_list_statuses_edit(chat_id, message_id, user_id):
@@ -71,9 +79,9 @@ def menu_list_statuses_edit(chat_id, message_id, user_id):
         return
 
     pkey = current_issue.project
-    BOT.edit_message_text(chat_id=chat_id, message_id=message_id, text=f'Выберите статус:',
-                          reply_markup=create_inline_markup(testim_jira_api.get_possible_statuses(pkey),
-                                                            default=Button.NO_FILTER))
+    BOT.edit_message_text(chat_id=chat_id, message_id=message_id, text=f'Выберите статус',
+                          reply_markup=create_inline_markup(default=Button.NO_FILTER,
+                                                            options=testim_jira_api.get_possible_statuses(pkey)))
 
 
 def menu_list_statuses_new(chat_id, user_id):
@@ -84,9 +92,9 @@ def menu_list_statuses_new(chat_id, user_id):
         return
 
     pkey = current_issue.project
-    BOT.send_message(chat_id, 'Выберите статус:',
-                     reply_markup=create_inline_markup(testim_jira_api.get_possible_statuses(pkey),
-                                                       default=Button.NO_FILTER))
+    BOT.send_message(chat_id, 'Выберите статус',
+                     reply_markup=create_inline_markup(default=Button.NO_FILTER,
+                                                       options=testim_jira_api.get_possible_statuses(pkey)))
 
 
 def menu_list_issues(chat_id, user_id):
@@ -105,15 +113,14 @@ def menu_list_issues(chat_id, user_id):
     filters = []
 
     if filtering_issue is not None:
-        params.append(filtering_issue.project)
         if filtering_issue.project is not None:
+            params.append(filtering_issue.project)
             filters.append(f'Проект: {filtering_issue.project}')
-        params.append(filtering_issue.status)
         if filtering_issue.status is not None:
+            params.append(filtering_issue.status)
             filters.append(f'Статус: {filtering_issue.status}')
-        if len(filters) > 0:
+        if len(filters):
             filters.append('')
-            filters.insert(0, 'Фильтры:')
 
     return [params, filters]
 
@@ -121,21 +128,21 @@ def menu_list_issues(chat_id, user_id):
 def menu_list_issues_edit(chat_id, user_id, message_id):
     params, filters = menu_list_issues(chat_id, user_id)
     BOT.edit_message_text(chat_id=chat_id, message_id=message_id,
-                          text=f'{'\n'.join(filters)}\nВыберите задачу:',
-                          reply_markup=create_inline_markup(testim_jira_api.get_issues_keys(*params)))
+                          text=f'{'\n'.join(filters)}\nВыберите задачу',
+                          reply_markup=create_inline_markup(options=testim_jira_api.get_issues_keys(*params)))
 
 
 def menu_list_issues_new(chat_id, user_id):
     params, filters = menu_list_issues(chat_id, user_id)
-    BOT.send_message(chat_id, f'{'\n'.join(filters)}\nВыберите задачу:',
-                     reply_markup=create_inline_markup(testim_jira_api.get_issues_keys(*params)))
+    BOT.send_message(chat_id, f'{'\n'.join(filters)}\nВыберите задачу',
+                     reply_markup=create_inline_markup(options=testim_jira_api.get_issues_keys(*params)))
 
 
 def menu_list_issues_back(chat_id, user_id):
     params, filters = menu_list_issues(chat_id, user_id)
     BOT.send_message(chat_id, 'Список задач', reply_markup=create_markup(Button.BACK))
-    BOT.send_message(chat_id, f'{'\n'.join(filters)}\nВыберите задачу:',
-                     reply_markup=create_inline_markup(testim_jira_api.get_issues_keys(*params)))
+    BOT.send_message(chat_id, f'{'\n'.join(filters)}\nВыберите задачу',
+                     reply_markup=create_inline_markup(options=testim_jira_api.get_issues_keys(*params)))
 
 
 def menu_issue(chat_id, issue):
@@ -144,8 +151,8 @@ def menu_issue(chat_id, issue):
 
 
 def menu_new_issue_project(chat_id):
-    BOT.send_message(chat_id, 'Список проектов:',
-                     reply_markup=create_inline_markup(testim_jira_api.get_projects_keys()))
+    BOT.send_message(chat_id, 'Список проектов',
+                     reply_markup=create_inline_markup(options=testim_jira_api.get_projects_keys()))
 
 
 def menu_new_issue_assignee(chat_id, user_id):
@@ -156,9 +163,9 @@ def menu_new_issue_assignee(chat_id, user_id):
         return
 
     pkey = new_issue.project
-    BOT.send_message(chat_id, 'Выберите исполнителя:',
-                     reply_markup=create_inline_markup(testim_jira_api.get_assignable_users(pkey),
-                                                       default=Button.NO_ASSIGNEE))
+    BOT.send_message(chat_id, 'Выберите исполнителя',
+                     reply_markup=create_inline_markup(default=Button.NO_ASSIGNEE,
+                                                       options=testim_jira_api.get_assignable_users(pkey)))
 
 
 def menu_error(chat_id, user_id):
@@ -221,8 +228,7 @@ def text_handler(message):
                     menu_existing(chat.id)
 
             case UserState.LIST_PROJECTS:
-                BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id - 1,
-                                      text=f'Выберите проект', reply_markup=None)
+                BOT.edit_message_reply_markup(chat_id=chat.id, message_id=message.message_id - 1, reply_markup=None)
                 if message.text == Button.BACK:
                     next_state = UserState.MENU
                     menu_menu(chat.id)
@@ -233,8 +239,7 @@ def text_handler(message):
                     menu_list_projects(chat.id)
 
             case UserState.LIST_STATUSES:
-                BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id - 1,
-                                      text=f'Выберите статус', reply_markup=None)
+                BOT.edit_message_reply_markup(chat_id=chat.id, message_id=message.message_id - 1, reply_markup=None)
                 if message.text == Button.BACK:
                     current_issue_repo.delete(user.id)
                     next_state = UserState.MENU
@@ -247,8 +252,7 @@ def text_handler(message):
                     menu_list_statuses_new(chat.id, user.id)
 
             case UserState.LIST_ISSUES:
-                BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id - 1,
-                                      text=f'Выберите задачу', reply_markup=None)
+                BOT.edit_message_reply_markup(chat_id=chat.id, message_id=message.message_id - 1, reply_markup=None)
                 if message.text == Button.BACK:
                     current_issue_repo.delete(user.id)
                     next_state = UserState.MENU
@@ -269,7 +273,7 @@ def text_handler(message):
                                          reply_markup=create_markup(Button.CANCEL))
                         BOT.send_message(chat.id, 'Выберите операцию',
                                          reply_markup=create_inline_markup(
-                                             testim_jira_api.get_possible_transitions(issue.key)))
+                                             options=testim_jira_api.get_possible_transitions(issue.key)))
                     else:
                         next_state = UserState.LIST_ISSUES
                         BOT.send_message(chat.id, 'Задача не найдена или соединение с Jira прервано')
@@ -314,14 +318,12 @@ def text_handler(message):
             case UserState.NEW_ISSUE_PROJECT:
                 if message.text == Button.CANCEL:
                     next_state = UserState.MENU
-                    BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id - 1,
-                                          text=f'Список проектов', reply_markup=None)
+                    BOT.edit_message_reply_markup(chat_id=chat.id, message_id=message.message_id - 1, reply_markup=None)
                     menu_menu(chat.id)
                     new_issue_repo.delete(user.id)
                 else:
                     next_state = UserState.NEW_ISSUE_PROJECT
-                    BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id - 1,
-                                          text=f'Список проектов', reply_markup=None)
+                    BOT.edit_message_reply_markup(chat_id=chat.id, message_id=message.message_id - 1, reply_markup=None)
                     BOT.send_message(chat.id, 'Выберите существующий проект')
                     menu_new_issue_project(chat.id)
 
@@ -338,20 +340,12 @@ def text_handler(message):
             case UserState.NEW_ISSUE_ASSIGNEE:
                 if message.text == Button.CANCEL:
                     next_state = UserState.MENU
-                    BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id - 1,
-                                          text=f'Список исполнителей', reply_markup=None)
+                    BOT.edit_message_reply_markup(chat_id=chat.id, message_id=message.message_id - 1, reply_markup=None)
                     menu_menu(chat.id)
                     new_issue_repo.delete(user.id)
-                # elif message.text == Button.NO_ASSIGNEE:
-                #     next_state = UserState.NEW_ISSUE_DESCRIPTION
-                #     BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id - 1,
-                #                           text=f'Без исполнителя', reply_markup=None)
-                #     BOT.send_message(chat.id, 'Введите описание задачи',
-                #                      reply_markup=create_markup(Button.CANCEL))
                 else:
                     next_state = UserState.NEW_ISSUE_ASSIGNEE
-                    BOT.edit_message_text(chat_id=chat.id, message_id=message.message_id - 1,
-                                          text=f'Список исполнителей', reply_markup=None)
+                    BOT.edit_message_reply_markup(chat_id=chat.id, message_id=message.message_id - 1, reply_markup=None)
                     BOT.send_message(chat.id, 'Выберите существующего исполнителя')
                     menu_new_issue_assignee(chat.id, user.id)
 
@@ -432,6 +426,9 @@ def callback_inline(call):
         menu_error(chat.id, user.id)
         return
 
+    if call.data == '-':
+        return
+
     next_state = UserState.MENU
 
     try:
@@ -450,7 +447,7 @@ def callback_inline(call):
                         current_issue_repo.create(user.id)
                         menu_list_statuses_edit(chat.id, call.message.message_id, user.id)
                     else:
-                        # UNREACHABLE
+                        # UNREACHABLE (not really)
                         next_state = UserState.LIST_PROJECTS
                         BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
                                               text=f'Нет такого проекта', reply_markup=None)
@@ -479,7 +476,7 @@ def callback_inline(call):
 
                         menu_list_issues_edit(chat.id, user.id, call.message.message_id)
                     else:
-                        # UNREACHABLE
+                        # UNREACHABLE (not really)
                         next_state = UserState.LIST_ISSUES
                         BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
                                               text=f'Нет такого статуса', reply_markup=None)
@@ -490,12 +487,12 @@ def callback_inline(call):
                     if call.data == issue.raw.get('key'):
                         next_state = UserState.ISSUE
                         current_issue_repo.update(user.id, 'issue_key', issue.raw.get('key'))
-                        BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
-                                              text=f'Список задач', reply_markup=None)
+                        BOT.edit_message_reply_markup(chat_id=chat.id, message_id=call.message.message_id,
+                                                      reply_markup=None)
                         menu_issue(chat.id, issue)
                         break
                 else:
-                    # UNREACHABLE
+                    # UNREACHABLE (not really)
                     next_state = UserState.LIST_ISSUES
                     BOT.edit_message_text(chat_id=chat.id, message_id=call.message.message_id,
                                           text=f'Нет такой задачи', reply_markup=None)
