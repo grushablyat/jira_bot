@@ -12,6 +12,8 @@ from states import UserState
 
 logging.basicConfig(filename=LOG_FILE)
 
+bot_logger = logging.getLogger(__name__)
+
 BOT = TeleBot(token=TG_TOKEN)
 
 
@@ -410,8 +412,8 @@ def text_handler(message):
     except ValueError:
         menu_error(chat.id, user.id)
         return
-    except ApiException:
-        pass
+    except ApiException as e:
+        bot_logger.error(e)
 
     state_repo.update(user.id, next_state)
 
@@ -596,8 +598,8 @@ def callback_inline(call):
     except ValueError:
         menu_error(chat.id, user.id)
         return
-    except ApiException:
-        pass
+    except ApiException as e:
+        bot_logger.error(e)
 
     state_repo.update(user.id, next_state)
 
