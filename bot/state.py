@@ -1,7 +1,7 @@
 from enum import IntEnum
 
 
-class UserState(IntEnum):
+class State(IntEnum):
     MENU = 0
     ERROR = 1
 

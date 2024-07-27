@@ -1,4 +1,4 @@
-from bot.testim_jira_api import get_possible_issue_types
+from bot.jira_api import get_possible_issue_types
 
 
 class NewIssue:

@@ -5,7 +5,7 @@ import requests
 from jira import JIRA, JIRAError
 from requests.auth import HTTPBasicAuth
 
-from bot.config import JIRA_PASSWORD, JIRA_URL, JIRA_USERNAME
+from config import JIRA_PASSWORD, JIRA_URL, JIRA_USERNAME
 
 jira_logger = logging.getLogger(__name__)
 
