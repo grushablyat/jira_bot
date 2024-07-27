@@ -54,9 +54,8 @@ def format_issue(issue):
             f'<b><i>Описание</i></b>:\n{issue.fields.description}')
 
 
-def menu_existing(chat_id, text=None, inline_markup=None):
-    BOT.send_message(chat_id, text if text else 'Выберите существующее действие или нажмите /start',
-                     reply_markup=inline_markup)
+def menu_existing(chat_id, text=None):
+    BOT.send_message(chat_id, text if text else 'Выберите существующее действие')
 
 
 def menu_menu(chat_id):
@@ -148,6 +147,22 @@ def menu_list_issues_back(chat_id, user_id):
 def menu_issue(chat_id, issue):
     BOT.send_message(chat_id, format_issue(issue), parse_mode='HTML',
                      reply_markup=create_markup(Button.STATUS, Button.BACK))
+
+
+def menu_status(chat_id, user_id):
+    issue = current_issue_repo.get_by_user_id(user_id)
+    if issue:
+        BOT.send_message(chat_id, 'Изменение статуса задачи',
+                         reply_markup=create_markup(Button.CANCEL))
+        BOT.send_message(chat_id, 'Выберите операцию',
+                         reply_markup=create_inline_markup(
+                             options=testim_jira_api.get_possible_transitions(issue.key)))
+        return True
+    else:
+        BOT.send_message(chat_id, 'Задача не найдена или соединение с Jira прервано')
+        current_issue_repo.update(user_id, 'issue_key', None)
+        menu_list_issues_back(chat_id, user_id)
+        return False
 
 
 def menu_new_issue_project(chat_id):
@@ -266,19 +281,7 @@ def text_handler(message):
 
             case UserState.ISSUE:
                 if message.text == Button.STATUS:
-                    next_state = UserState.STATUS
-                    issue = current_issue_repo.get_by_user_id(user.id)
-                    if issue is not None:
-                        BOT.send_message(chat.id, 'Изменение статуса задачи',
-                                         reply_markup=create_markup(Button.CANCEL))
-                        BOT.send_message(chat.id, 'Выберите операцию',
-                                         reply_markup=create_inline_markup(
-                                             options=testim_jira_api.get_possible_transitions(issue.key)))
-                    else:
-                        next_state = UserState.LIST_ISSUES
-                        BOT.send_message(chat.id, 'Задача не найдена или соединение с Jira прервано')
-                        current_issue_repo.update(user.id, 'issue_key', None)
-                        menu_list_issues_back(chat.id, user.id)
+                    next_state = UserState.STATUS if menu_status(chat.id, user.id) else UserState.LIST_ISSUES
 
                 elif message.text == Button.BACK:
                     next_state = UserState.LIST_ISSUES
@@ -312,8 +315,8 @@ def text_handler(message):
                         current_issue_repo.update(user.id, 'issue_key', None)
                         menu_list_issues_back(chat.id, user.id)
                 else:
-                    next_state = UserState.STATUS
-                    menu_existing(chat.id)
+                    BOT.edit_message_reply_markup(chat_id=chat.id, message_id=message.message_id - 1, reply_markup=None)
+                    next_state = UserState.STATUS if menu_status(chat.id, user.id) else UserState.LIST_ISSUES
 
             case UserState.NEW_ISSUE_PROJECT:
                 if message.text == Button.CANCEL:
@@ -394,13 +397,11 @@ def text_handler(message):
                             current_issue_repo.update(user.id, 'issue_key', issue.raw.get('key'))
                             menu_issue(chat.id, issue)
                     else:
-                        next_state = UserState.MENU
+                        next_state = UserState.NEW_ISSUE_PREVIEW
                         menu_existing(chat.id, 'Произошла ошибка, попробуйте снова')
-                        menu_menu(chat.id)
                 else:
-                    next_state = UserState.MENU
-                    menu_existing(chat.id, 'Произошла ошибка, попробуйте снова')
-                    menu_menu(chat.id)
+                    next_state = UserState.NEW_ISSUE_PREVIEW
+                    menu_existing(chat.id)
 
             case _:
                 menu_error(chat.id, user.id)
