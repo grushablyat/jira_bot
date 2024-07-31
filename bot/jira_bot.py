@@ -1,5 +1,4 @@
 import logging
-from threading import Thread
 
 from telebot import TeleBot
 from telebot.apihelper import ApiException
@@ -603,13 +602,3 @@ def callback_inline(call):
         bot_logger.error(e)
 
     state_repo.update(user.id, next_state)
-
-
-def run():
-    Thread(target=BOT.polling, kwargs={
-        'non_stop': True
-    }).start()
-
-
-if __name__ == '__main__':
-    BOT.polling(non_stop=True)
