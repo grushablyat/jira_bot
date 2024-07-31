@@ -1,5 +1,9 @@
-from jira_bot import run as bot_run
+from threading import Thread
+
+from jira_bot import BOT
 
 
 if __name__ == '__main__':
-    bot_run()
+    Thread(target=BOT.polling, kwargs={
+        'non_stop': True
+    }).start()
