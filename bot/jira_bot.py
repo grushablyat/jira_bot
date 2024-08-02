@@ -114,11 +114,11 @@ def menu_list_issues(chat_id, user_id):
     filters = []
 
     if filtering_issue is not None:
+        params.append(filtering_issue.project)
         if filtering_issue.project is not None:
-            params.append(filtering_issue.project)
             filters.append(f'Проект: {filtering_issue.project}')
+        params.append(filtering_issue.status)
         if filtering_issue.status is not None:
-            params.append(filtering_issue.status)
             filters.append(f'Статус: {filtering_issue.status}')
         if len(filters):
             filters.append('')
