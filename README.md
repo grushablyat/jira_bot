@@ -18,8 +18,27 @@ JIRA_URL = 'JIRA_URL'
 DBC = {
     'username': 'USERNAME',
     'password': 'PASSWORD',
-    'host': 'HOST',
-    'port': PORT,
+    'host': 'DB_HOST',
+    'port': DB_PORT,
     'database': 'DATABASE',
 }
+
+# Notifier config
+NOTIFY = {
+    'host': 'NOTIFIER_HOST',
+    'port': NOTIFIER_PORT,
+}
 ```
+
+## Настройка уведомителя
+
+Для начала убедитесь, что все действия по [настройке обработчика событий Jira](https://github.com/grushablyat/JiraEventHandler#%D0%BD%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B0) выполнены
+
+Если вы запускаете уведомителя на публичном адресе, дальнейшая настройка не требуется \
+Если же уведомитель запускается локально, следует настроить туннелирование с помощью утилиты ngrok (или аналогов)
+
+```powershell
+ngrok http --domain=YOUR_NGROK_DOMAIN http://NOTIFIER_HOST:NOTIFIER_PORT
+```
+
+В этом случае в обработчике событий Jira в качестве URL необходимо указать ```YOUR_NGROK_DOMAIN```
